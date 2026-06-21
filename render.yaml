@@ -1,0 +1,18 @@
+# Render Blueprint (infrastructure-as-code).
+# Push this repo to GitHub, then in Render: New > Blueprint, point at the repo.
+# Secrets marked "sync: false" are filled in via the Render dashboard, not Git.
+services:
+  - type: web
+    name: kinfold
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/index.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true          # Render generates a strong random value
+      - key: WIKITREE_APP_ID
+        value: kinfold
