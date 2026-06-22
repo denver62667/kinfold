@@ -60,6 +60,13 @@
       <section class="search" aria-label="Search historical records">
         <div id="recordsGate"></div>
         <form id="recordsForm">
+          <div class="field">
+            <label for="recSource">Source</label>
+            <select id="recSource">
+              <option value="openarchives">Open Archives · NL/BE/FR</option>
+              <option value="europeana" id="recSourceEuropeana" disabled hidden>Europeana · UK/DE/EU</option>
+            </select>
+          </div>
           <div class="field field-grow">
             <label for="recGiven">Given name</label>
             <input id="recGiven" placeholder="Samuel" autocomplete="off" />
@@ -71,6 +78,17 @@
           <div class="field field-grow">
             <label for="recBirthPlace">Place</label>
             <input id="recBirthPlace" placeholder="Florida, Missouri" autocomplete="off" />
+          </div>
+          <div class="field" id="recCountryField" hidden>
+            <label for="recCountry">Country</label>
+            <select id="recCountry">
+              <option value="">Any</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="Germany">Germany</option>
+              <option value="Netherlands">Netherlands</option>
+              <option value="Belgium">Belgium</option>
+              <option value="France">France</option>
+            </select>
           </div>
           <button type="submit" class="btn-records btn-records-submit">Search records</button>
         </form>

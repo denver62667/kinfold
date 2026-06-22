@@ -67,6 +67,7 @@ Put the host behind HTTPS (most platforms do this for you).
 | `NODE_ENV`         | `production` (enables secure cookies + proxy trust)         |
 | `SESSION_SECRET`   | A long random string (generate one; keep it secret)         |
 | `WIKITREE_APP_ID`  | Any label, e.g. `kinfold`                                    |
+| `EUROPEANA_API_KEY`| *Optional.* Free key for the Europeana source (UK/Scotland & Germany records). Get one at <https://pro.europeana.eu/get-api>. Omit to keep the source disabled. |
 
 Set these in your host's dashboard, **never** in committed files.
 

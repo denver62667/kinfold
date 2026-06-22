@@ -56,11 +56,16 @@ Because no source needs an API key, a public instance works with no approval ste
 | `PORT`            | Port for the local server (default 3000)                          |
 | `SESSION_SECRET`  | Any random string; signs the session cookie                       |
 | `WIKITREE_APP_ID` | A label identifying your app to WikiTree (no registration needed) |
+| `EUROPEANA_API_KEY` | *Optional.* Free key (no paid tier) enabling the Europeana record source — pan-European archives incl. UK/Scotland & Germany. Get one at <https://pro.europeana.eu/get-api>. Leave blank to keep it disabled. |
 
 ## How to use it
 
 1. Search a name (e.g. `Samuel Clemens`, optionally a birth year).
-2. Pick a WikiTree match — you'll get a dossier: vitals, bio, parents, spouses.
+2. Pick a WikiTree match — you'll get a dossier: vitals, bio, parents, spouses,
+   **plus an automatic cross-source reconciliation**: the person is matched against
+   the best Wikidata entity (alias-aware, so pen/maiden names still match) with a
+   fact-by-fact match/conflict table, and corroborated with Open Archives (and
+   Europeana, if configured). Opening a person uses every source, not just WikiTree.
 3. Use **Auto-build** to climb the tree and match each person against Wikidata.
 4. High-confidence matches merge automatically; uncertain ones become questions
    you answer in the Auto-build tab.
@@ -71,7 +76,11 @@ Working: WikiTree search, profile, relatives, ancestors; Wikidata person search 
 fetch (no auth) with deterministic fact reconciliation; **Open Archives**
 (openarch.nl) historical-record search in the Records tab — ~277M free
 Dutch/Belgian/French records — plus a "find records for this person" handoff from
-the dossier and paging through results.
+the dossier and paging through results. The Records tab also offers **Europeana**
+(api.europeana.eu) as a second source when `EUROPEANA_API_KEY` is set — pan-European
+archives and heritage records spanning the UK (incl. Scotland), Germany and beyond,
+with an optional country filter. It's gated by its key: with no key set, the option
+stays hidden and the rest of the app is unaffected.
 
 The **Auto-build agent** (`server/agent/`) builds a tree from a seed WikiTree
 person: it climbs the WikiTree skeleton and scores each person against
@@ -102,6 +111,7 @@ server/
   wikitree.js      WikiTree API client (server-side, no CORS issue)
   wikidata.js      Wikidata client (no auth; descriptive User-Agent)
   openarchives.js  Open Archives client (no auth)
+  europeana.js     Europeana client (optional free API key; UK/DE/EU records)
   agent/
     scoring.js     Deterministic match-confidence scoring (self-tested)
     engine.js      Tree state, expansion loop, questions

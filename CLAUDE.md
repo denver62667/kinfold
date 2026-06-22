@@ -24,6 +24,7 @@ server/
   wikitree.js      WikiTree client (server-side; the API blocks browser CORS)
   wikidata.js      Wikidata client (no auth; descriptive User-Agent required)
   openarchives.js  Open Archives client (no auth)
+  europeana.js     Europeana client (optional free API key; UK/DE/EU records)
   agent/
     scoring.js     Deterministic match-confidence scoring (pure, self-tested)
     engine.js      Tree state, BFS expansion loop, questions, source matching
@@ -66,12 +67,15 @@ server-side.
 ## Source colors (UI)
 
 WikiTree = slate `--wikitree`; Open Archives = teal `--records`;
-Wikidata = plum `--wikidata`. New sources get one new accent color.
+Wikidata = plum `--wikidata`; Europeana = burnt orange `--europeana`.
+New sources get one new accent color.
 
 ## Routes (server/index.js)
 
 - WikiTree: `/api/wikitree/search|profile/:key|ancestors/:key`
+- Cross-reference: `POST /api/crossref` (one person → reconciled vs best Wikidata match + Open Archives/Europeana records; powers the dossier so a search isn't WikiTree-only). Reconciliation logic in `crossref.js` (pure, self-tested).
 - Open Archives: `/api/openarchives/search`
+- Europeana: `/api/europeana/search` (key-gated); `/api/sources` reports which optional sources are on
 - Agent: `/api/agent/start|continue|answer|tree|gedcom`
 
 ## Deploy
@@ -84,4 +88,8 @@ server memory keyed by `session.treeId`. Production sets `NODE_ENV=production`
 
 WikiTree is the structural skeleton; **Wikidata** is the no-auth cross-source
 matcher (deterministic scoring, auto-merge only on high confidence); **Open
-Archives** is corroboration only. All three need no API key.
+Archives** is corroboration only. Those three need no API key. **Europeana** is an
+optional Records-tab source for UK/Scotland/Germany/EU archives, gated behind a
+free `EUROPEANA_API_KEY` (and `/api/sources`); when no key is set it stays hidden
+and nothing else changes. It mirrors the `openarchives.js` flattened record shape,
+so the UI and scoring stay source-agnostic.

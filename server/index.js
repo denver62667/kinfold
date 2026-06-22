@@ -6,9 +6,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as wikitree from "./wikitree.js";
+import * as wikidata from "./wikidata.js";
 import * as openarch from "./openarchives.js";
+import * as europeana from "./europeana.js";
 import * as agent from "./agent/engine.js";
 import { treeToGedcom } from "./agent/gedcom.js";
+import { reconcile } from "./crossref.js";
+import { scoreMatch, scoreRecord } from "./agent/scoring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -51,6 +55,38 @@ const wrap = (handler) => (req, res) =>
     res.status(502).json({ error: err.message });
   });
 
+// --- cross-reference helpers ---
+const yr = (d) => { const m = String(d || "").match(/\b(\d{4})\b/); return m ? m[1] : ""; };
+const firstPlaceToken = (p) => (p ? p.split(",")[0].trim() : "");
+const factCount = (c) => ["birthDate", "deathDate", "birthPlace", "deathPlace"].filter((k) => c[k]).length;
+const flatWd = (c) => ({
+  name: c.name, birthDate: c.birthDate, deathDate: c.deathDate,
+  birthPlace: c.birthPlace, deathPlace: c.deathPlace, url: c.url, qid: c.qid
+});
+
+// Pull corroborating records for a person from Open Archives (+ Europeana when a
+// key is set), score each against the person, and return the strongest few.
+async function gatherRecords(wt) {
+  const name = [wt.firstName, wt.lastName].filter(Boolean).join(" ");
+  if (!name) return [];
+  const out = [];
+  try {
+    const { results } = await openarch.searchRecords({ name, eventplace: firstPlaceToken(wt.birthPlace), count: 8 });
+    for (const r of results || []) out.push({ ...r, source: "openarchives", score: scoreRecord(wt, r) });
+  } catch (e) { console.error("crossref openarchives:", e.message); }
+  if (europeana.hasKey()) {
+    try {
+      const { results } = await europeana.searchRecords({ name, count: 8 });
+      for (const r of results || []) out.push({ ...r, source: "europeana", score: scoreRecord(wt, r) });
+    } catch (e) { console.error("crossref europeana:", e.message); }
+  }
+  return out
+    .filter((r) => r.score >= 0.5)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map((r) => ({ ...r, score: Math.round(r.score * 100) / 100 }));
+}
+
 // ---------- WikiTree ----------
 
 app.get("/api/wikitree/search", wrap(async (req, res) => {
@@ -84,6 +120,74 @@ app.get("/api/openarchives/search", wrap(async (req, res) => {
     count: Math.min(Number(count) || 20, 100)
   });
   res.json(data);
+}));
+
+// Europeana search (free API key — pan-European archives incl. UK & Germany).
+app.get("/api/europeana/search", wrap(async (req, res) => {
+  if (!europeana.hasKey()) {
+    return res.status(503).json({
+      error: "Europeana is not configured. Set EUROPEANA_API_KEY (free at https://pro.europeana.eu/get-api)."
+    });
+  }
+  const { given = "", surname = "", place = "", country = "", start = "0", count = "20" } = req.query;
+  const name = [given, surname].map((s) => s.trim()).filter(Boolean).join(" ");
+  if (!name) return res.status(400).json({ error: "A name is required to search Europeana." });
+  const data = await europeana.searchRecords({
+    name,
+    place,
+    country,
+    start: Number(start) || 0,
+    count: Math.min(Number(count) || 20, 100)
+  });
+  res.json(data);
+}));
+
+// Which optional, key-gated sources are available (lets the UI hide what's off).
+app.get("/api/sources", (req, res) => {
+  res.json({ europeana: europeana.hasKey() });
+});
+
+// Cross-reference one person across ALL sources at once: WikiTree (the subject) is
+// reconciled fact-by-fact against the best Wikidata match, and corroborated with
+// Open Archives (+ Europeana when configured). Powers the "dig deeper" dossier so a
+// search isn't WikiTree-only. Every source is wrapped so one failure can't break it.
+app.post("/api/crossref", wrap(async (req, res) => {
+  const { wikitreeKey } = req.body;
+  if (!wikitreeKey) return res.status(400).json({ error: "wikitreeKey is required" });
+
+  const wt = await wikitree.getProfile(wikitreeKey); // throws if not found
+
+  let wikidataMatch = null, match = null, reconciliation = null;
+  try {
+    const candidates = await wikidata.searchPersons({
+      given: wt.firstName, surname: wt.lastName,
+      birth: yr(wt.birthDate), death: yr(wt.deathDate)
+    });
+    const scored = (candidates || [])
+      .map((c) => ({ c, ...scoreMatch(wt, c) }))
+      .sort((a, b) => b.score - a.score);
+    // Among candidates whose score essentially ties the top, prefer the one with
+    // the most populated facts — avoids surfacing a name-only stub over the real,
+    // date-and-place-rich entity (e.g. picking the full person, not a bare label).
+    const top = scored[0];
+    const best = top
+      ? scored
+          .filter((s) => s.score >= top.score - 0.03)
+          .sort((a, b) => factCount(b.c) - factCount(a.c))[0]
+      : null;
+    // Show the best plausible match (medium+ or a name/date conflict worth seeing).
+    if (best && (best.tier === "high" || best.tier === "medium" || best.conflict)) {
+      wikidataMatch = flatWd(best.c);
+      match = { score: best.score, tier: best.tier, conflict: best.conflict, breakdown: best.breakdown };
+      reconciliation = reconcile(wt, best.c);
+    }
+  } catch (e) {
+    console.error("crossref wikidata:", e.message);
+  }
+
+  const records = await gatherRecords(wt);
+
+  res.json({ wikitree: wt, wikidata: wikidataMatch, match, reconciliation, records });
 }));
 
 // ---------- Tree-building agent ----------

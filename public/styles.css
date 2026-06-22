@@ -9,6 +9,7 @@
   --wikitree: #2f4858;   /* slate ink */
   --records: #2f6b63;    /* teal — Open Archives records */
   --wikidata: #6b4a8a;   /* plum — Wikidata cross-source */
+  --europeana: #b0662c;  /* burnt orange — Europeana (UK/DE/EU records) */
   --match: #3c6e5a;      /* verdigris */
   --conflict: #9a3b22;   /* oxblood */
   --single: #8a7d4f;     /* one-source amber */
@@ -77,6 +78,12 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
   border-bottom: 2px solid var(--ink); border-radius: 2px 2px 0 0;
   padding: 9px 11px; transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
+.field select {
+  font-family: var(--font-body); font-size: 17px; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  border-bottom: 2px solid var(--ink); border-radius: 2px 2px 0 0;
+  padding: 9px 11px; cursor: pointer;
+}
 .field input::placeholder { color: var(--rule); }
 .field input:focus {
   outline: none; border-color: var(--wikitree); border-bottom-color: var(--wikitree);
@@ -140,6 +147,50 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 .bio { font-size: 15px; max-height: 320px; overflow: auto; padding-right: 8px; }
 .bio :is(h1,h2,h3) { font-family: var(--font-display); font-size: 18px; }
 
+/* ---------- cross-source reconciliation (in the dossier) ---------- */
+.cross-source { margin-top: 30px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.cs-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink); margin: 14px 0 12px;
+}
+.cs-srcline { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 8px; }
+.cs-srcname { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.cs-score { font-family: var(--font-mono); font-size: 12px; color: var(--match); }
+.cs-score.bad { color: var(--conflict); }
+.cs-link { font-family: var(--font-mono); font-size: 11px; color: var(--wikidata); text-decoration: none; border-bottom: 1px dotted var(--wikidata); }
+
+.cs-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cs-table th {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-soft); text-align: left;
+  padding: 4px 10px; border-bottom: 1px solid var(--rule);
+}
+.cs-table td { padding: 7px 10px; border-bottom: 1px solid var(--panel-edge); vertical-align: top; }
+.cs-table .cs-fact { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+/* status accents: a left bar on the fact label, color-coded */
+.cs-table tr td:first-child { border-left: 3px solid transparent; }
+.cs-match    td:first-child { border-left-color: var(--match); }
+.cs-conflict td:first-child { border-left-color: var(--conflict); }
+.cs-conflict td { background: rgba(154, 59, 34, 0.06); }
+.cs-wikitree-only td:first-child { border-left-color: var(--wikitree); }
+.cs-wikidata-only td:first-child { border-left-color: var(--wikidata); }
+.cs-none td { color: var(--rule); }
+
+.cs-empty { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); padding: 10px 0; display: flex; align-items: center; gap: 8px; }
+
+.cs-records { margin-top: 18px; }
+.cs-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+.cs-rec {
+  display: flex; align-items: center; gap: 10px; padding: 9px 11px; margin-bottom: 6px;
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  border-left: 4px solid var(--records); border-radius: 2px;
+}
+.cs-rec.prov-europeana { border-left-color: var(--europeana); }
+.cs-rec-body { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.cs-rec-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.cs-rec-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+.cs-rec-score { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+
 /* ---------- messages ---------- */
 .message { margin-top: 20px; padding: 13px 16px; border-left: 3px solid var(--conflict); background: var(--panel); font-size: 15px; }
 
@@ -149,8 +200,14 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 620px) {
-  .wordmark h1 { font-size: 36px; }
+  .wordmark h1 { font-size: 34px; }
+  .dossier-head h2 { font-size: 27px; }
   .panels { grid-template-columns: 1fr; }
+  /* let the date/place wrap instead of forcing the card wider */
+  .match-card .mc-meta { white-space: normal; }
+  /* reclaim side space on phones */
+  main { padding-left: 16px; padding-right: 16px; }
+  .masthead-inner, .tabs, .colophon { padding-left: 16px; padding-right: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -212,6 +269,11 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 .record-card .rc-foot { margin-top: 11px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .record-card .rc-foot a { font-family: var(--font-mono); font-size: 12px; color: var(--records); text-decoration: none; border-bottom: 1px dotted var(--records); }
 .record-card .rc-score { font-family: var(--font-mono); font-size: 10px; color: var(--rule); }
+
+/* per-source accent: Open Archives keeps the teal default; Europeana is burnt orange */
+.record-card.prov-europeana { border-left-color: var(--europeana); }
+.record-card.prov-europeana .rc-collection { color: var(--europeana); }
+.record-card.prov-europeana .rc-foot a { color: var(--europeana); border-bottom: 1px dotted var(--europeana); }
 
 /* a "find records" handoff button in the dossier head */
 .btn-handoff {
@@ -336,9 +398,23 @@ a.pc-name:hover { text-decoration: underline; }
 .pc-score.ok { color: var(--match); }
 
 @media (max-width: 620px) {
-  .q-compare { grid-template-columns: 1fr 56px 1fr; }
-  .q-side { padding: 9px; }
   .person-grid { grid-template-columns: 1fr; }
+
+  /* Stack the source comparison so each side gets full width and reads
+     top-to-bottom (WikiTree → score → Wikidata) instead of three squeezed
+     columns that force the names to wrap. */
+  .q-compare { grid-template-columns: 1fr; }
+  .q-wt {
+    text-align: left; border-right: none;
+    border-left: 3px solid var(--wikitree); padding: 10px 0 10px 12px;
+  }
+  .q-cand { border-left: 3px solid var(--wikidata); padding: 10px 0 10px 12px; }
+  .q-mid { justify-content: flex-start; padding: 10px 0 2px; }
+  .q-score::after {
+    content: " match"; color: var(--ink-soft); font-weight: 400; font-size: 12px;
+  }
+  .q-options { gap: 8px; }
+  .q-opt { flex: 1 1 auto; text-align: center; }
 }
 
 /* agent: Open Archives corroboration */

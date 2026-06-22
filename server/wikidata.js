@@ -27,8 +27,9 @@ export async function searchPersons({ given, surname, birth, death }) {
   const qids = (searchJson.search || []).map((r) => r.id);
   if (!qids.length) return [];
 
-  // Step 2: batch fetch claims + labels.
-  const entities = await fetchEntities(qids, "claims|labels");
+  // Step 2: batch fetch claims + labels + aliases (aliases let us match people
+  // recorded under a pen name, maiden name, or anglicised name).
+  const entities = await fetchEntities(qids, "claims|labels|aliases");
 
   // Step 3: keep only humans (P31 includes Q5).
   const humans = Object.values(entities).filter(isHuman);
@@ -73,7 +74,7 @@ export async function getPerson(qid) {
 
 // --- API helpers ---
 
-async function fetchEntities(qids, props = "claims|labels") {
+async function fetchEntities(qids, props = "claims|labels|aliases") {
   const params = new URLSearchParams({
     action: "wbgetentities",
     ids: qids.join("|"),
@@ -191,9 +192,12 @@ function flattenEntity(entity, labels) {
   const birthPlaceQid = getEntityQid(claims, "P19");
   const deathPlaceQid = getEntityQid(claims, "P20");
 
+  const aliases = (entity.aliases?.en || []).map((a) => a.value).filter(Boolean);
+
   return {
     qid: entity.id,
     name: label,
+    aliases,
     firstName,
     lastName,
     gender: resolveGender(claims, labels),

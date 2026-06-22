@@ -58,10 +58,26 @@ function placeScore(a, b) {
 }
 
 function nameScore(a, b) {
-  const given = stringSim(a.firstName || firstToken(a.name), b.firstName || firstToken(b.name));
-  const surname = stringSim(a.lastName || lastToken(a.name), b.lastName || lastToken(b.name));
-  // Surname carries more identifying weight than given name.
-  return 0.4 * given + 0.6 * surname;
+  const aFirst = a.firstName || firstToken(a.name);
+  const aLast = a.lastName || lastToken(a.name);
+  // Score against the candidate's label AND any aliases (pen names, maiden names,
+  // anglicised forms), keeping the best — surname carries more identifying weight.
+  let best = 0;
+  for (const bn of candidateNames(b)) {
+    const given = stringSim(aFirst, firstToken(bn));
+    const surname = stringSim(aLast, lastToken(bn));
+    best = Math.max(best, 0.4 * given + 0.6 * surname);
+  }
+  return best;
+}
+
+// All known name strings for a candidate: structured first+last, label, aliases.
+function candidateNames(b) {
+  const names = [];
+  if (b.firstName || b.lastName) names.push(`${b.firstName || ""} ${b.lastName || ""}`.trim());
+  if (b.name) names.push(b.name);
+  for (const al of b.aliases || []) names.push(al);
+  return names.length ? names : [""];
 }
 function firstToken(name) { return (name || "").trim().split(/\s+/)[0] || ""; }
 function lastToken(name) { const t = (name || "").trim().split(/\s+/); return t[t.length - 1] || ""; }

@@ -90,6 +90,73 @@ async function openDossier(key) {
   }
 
   renderDossier(profile, relatives);
+  loadCrossSource(key);
+}
+
+// Dig deeper: reconcile this WikiTree person against Wikidata and corroborate with
+// Open Archives (+ Europeana) — so opening a person uses every source, not just WikiTree.
+async function loadCrossSource(key) {
+  const wrap = $("#crossSource");
+  if (!wrap) return;
+  try {
+    const data = await postJSON("/api/crossref", { wikitreeKey: key });
+    renderCrossSource(data);
+  } catch (err) {
+    wrap.innerHTML = `<div class="cs-empty">Couldn't cross-reference: ${esc(err.message)}</div>`;
+  }
+}
+
+function renderCrossSource(data) {
+  const wrap = $("#crossSource");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  wrap.appendChild(el("h3", "cs-label", "Cross-source reconciliation"));
+
+  const wd = data.wikidata, m = data.match, rec = data.reconciliation;
+  const wdPanel = el("div", "cs-wd");
+  if (wd && rec) {
+    const pct = Math.round((m.score || 0) * 100);
+    wdPanel.innerHTML = `
+      <div class="cs-srcline">
+        <span class="src src-wikidata">WD</span>
+        <span class="cs-srcname">Wikidata — ${esc(wd.name || "?")}</span>
+        <span class="cs-score${m.conflict ? " bad" : ""}">${pct}%${m.conflict ? " · date conflict" : ""}</span>
+        ${wd.url ? `<a class="cs-link" href="${esc(wd.url)}" target="_blank" rel="noopener">view ↗</a>` : ""}
+      </div>
+      <table class="cs-table">
+        <thead><tr><th></th><th>WikiTree</th><th>Wikidata</th></tr></thead>
+        <tbody>
+          ${rec.rows.map((r) =>
+            `<tr class="cs-${r.status}"><td class="cs-fact">${esc(r.label)}</td><td>${esc(r.wikitree || "—")}</td><td>${esc(r.wikidata || "—")}</td></tr>`
+          ).join("")}
+        </tbody>
+      </table>`;
+  } else {
+    wdPanel.innerHTML = `<div class="cs-empty"><span class="src src-wikidata">WD</span> No confident Wikidata match for this person.</div>`;
+  }
+  wrap.appendChild(wdPanel);
+
+  const recs = data.records || [];
+  const recPanel = el("div", "cs-records");
+  if (recs.length) {
+    recPanel.appendChild(el("div", "cs-sub", "Corroborating records"));
+    for (const r of recs) {
+      const evt = [r.eventType, r.eventDate, r.eventPlace].filter(Boolean).map(esc).join(" · ");
+      const card = el("div", `cs-rec prov-${r.source}`);
+      card.innerHTML = `
+        <span class="src ${r.source === "europeana" ? "src-europeana" : "src-openarchives"}">${r.source === "europeana" ? "EU" : "OA"}</span>
+        <span class="cs-rec-body">
+          <span class="cs-rec-name">${esc(r.name || "Record")}</span>
+          ${evt ? `<span class="cs-rec-meta">${evt}</span>` : ""}
+        </span>
+        <span class="cs-rec-score">${Math.round((r.score || 0) * 100)}%</span>
+        ${r.url ? `<a class="cs-link" href="${esc(r.url)}" target="_blank" rel="noopener">↗</a>` : ""}`;
+      recPanel.appendChild(card);
+    }
+  } else {
+    recPanel.innerHTML = `<div class="cs-empty">No corroborating records matched${europeanaAvailable ? " in Open Archives or Europeana" : " in Open Archives"}.</div>`;
+  }
+  wrap.appendChild(recPanel);
 }
 
 function renderDossier(p, relatives) {
@@ -118,6 +185,13 @@ function renderDossier(p, relatives) {
   panels.appendChild(relativesPanel(relatives));
   panels.appendChild(bioPanel(p));
   dossierEl.appendChild(panels);
+
+  // Placeholder filled in by loadCrossSource() once the other sources respond.
+  const cs = el("section", "cross-source");
+  cs.id = "crossSource";
+  cs.innerHTML = '<div class="loading">Cross-referencing across Wikidata, Open Archives' +
+    (europeanaAvailable ? " &amp; Europeana" : "") + "…</div>";
+  dossierEl.appendChild(cs);
 }
 
 function relativesPanel(rel) {
@@ -156,10 +230,43 @@ function bioPanel(p) {
 }
 
 // ===================== RECORDS VIEW =====================
-// Records come from Open Archives (free, no auth). The form is always available.
+// Records come from Open Archives (free, no auth) or — if a free API key is
+// configured server-side — Europeana (pan-European archives incl. UK & Germany).
 function renderRecordsGate() {
   $("#recordsForm").hidden = false;
   $("#oaHint").hidden = false;
+  ensureSourceToggle();
+}
+
+// Reveal the Europeana option only when the server reports a key is configured,
+// and wire the source <select> to the country field + hint text. Runs once.
+let europeanaAvailable = false;
+async function ensureSourceToggle() {
+  if (ensureSourceToggle.done) return;
+  ensureSourceToggle.done = true;
+  const sel = $("#recSource");
+  if (sel) sel.addEventListener("change", onRecordSourceChange);
+  try {
+    const s = await (await fetch("/api/sources")).json();
+    europeanaAvailable = !!(s && s.europeana);
+  } catch { /* offline: leave Europeana hidden */ }
+  const opt = $("#recSourceEuropeana");
+  if (opt) { opt.hidden = !europeanaAvailable; opt.disabled = !europeanaAvailable; }
+  onRecordSourceChange();
+}
+
+function currentRecordSource() {
+  const sel = $("#recSource");
+  return sel ? sel.value : "openarchives";
+}
+
+function onRecordSourceChange() {
+  const eu = currentRecordSource() === "europeana";
+  const cf = $("#recCountryField");
+  if (cf) cf.hidden = !eu;
+  $("#oaHint").textContent = eu
+    ? "Searches Europeana — free pan-European archives & heritage records (UK incl. Scotland, Germany, and more). Needs a name; country narrows results."
+    : "Searches Open Archives — free Dutch, Belgian and French records. No login needed; uses name and place.";
 }
 
 $("#recordsForm").addEventListener("submit", (e) => {
@@ -170,7 +277,9 @@ $("#recordsForm").addEventListener("submit", (e) => {
 const RECORD_PAGE_SIZE = 20;
 
 function runRecordSearch(opts = {}) {
-  return runOpenArchSearch(opts);
+  return currentRecordSource() === "europeana"
+    ? runEuropeanaSearch(opts)
+    : runOpenArchSearch(opts);
 }
 
 function renderPager(total, offset) {
@@ -234,7 +343,7 @@ async function runOpenArchSearch({ offset = 0 } = {}) {
       throw new Error(error || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    renderOpenArchRecords(data);
+    renderRecordCards(data, "openarchives");
     renderPager(data.total || 0, offset);
   } catch (err) {
     listEl.innerHTML = "";
@@ -243,16 +352,64 @@ async function runOpenArchSearch({ offset = 0 } = {}) {
   }
 }
 
-function renderOpenArchRecords(data) {
+// ---------- Europeana provider (free API key; UK incl. Scotland, Germany, EU) ----------
+async function runEuropeanaSearch({ offset = 0 } = {}) {
+  hideRecordsMessage();
+  const given = $("#recGiven").value.trim();
+  const surname = $("#recSurname").value.trim();
+  if (!given && !surname) {
+    showRecordsMessage("Enter a name to search Europeana.");
+    return;
+  }
+
+  const params = new URLSearchParams({
+    given,
+    surname,
+    place: $("#recBirthPlace").value.trim(),
+    country: ($("#recCountry") && $("#recCountry").value) || "",
+    count: String(RECORD_PAGE_SIZE),
+    start: String(offset)
+  });
+
+  const recordsEl = $("#records");
   const listEl = $("#recordList");
+  recordsEl.hidden = false;
+  if (offset > 0) recordsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  listEl.innerHTML = '<div class="loading">Searching Europeana…</div>';
+  $("#recordPager").hidden = true;
+
+  try {
+    const res = await fetch(`/api/europeana/search?${params}`);
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      throw new Error(error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    renderRecordCards(data, "europeana");
+    renderPager(data.total || 0, offset);
+  } catch (err) {
+    listEl.innerHTML = "";
+    $("#recordPager").hidden = true;
+    showRecordsMessage("Europeana search failed: " + err.message);
+  }
+}
+
+const RECORD_SOURCE_LABEL = {
+  openarchives: "Open Archives",
+  europeana: "Europeana"
+};
+
+function renderRecordCards(data, provider = "openarchives") {
+  const listEl = $("#recordList");
+  const label = RECORD_SOURCE_LABEL[provider] || "the source";
   $("#recordCount").textContent = data.total ? `(${data.total})` : "";
   listEl.innerHTML = "";
   if (!data.results || !data.results.length) {
-    listEl.appendChild(el("div", "loading", "No Open Archives records matched. Try just a surname, or add a place."));
+    listEl.appendChild(el("div", "loading", `No ${label} records matched. Try just a surname, or add a place.`));
     return;
   }
   for (const r of data.results) {
-    const card = el("div", "record-card oa-card");
+    const card = el("div", `record-card prov-${provider}`);
     const eventLine = [r.eventType, r.eventDate, r.eventPlace]
       .filter(Boolean).map(esc).join(" &nbsp;·&nbsp; ");
     const src = [r.sourceType, r.archive].filter(Boolean).map(esc).join(" — ");
@@ -262,7 +419,7 @@ function renderOpenArchRecords(data) {
       ${eventLine ? `<div class="rc-vitals">${eventLine}</div>` : ""}
       ${r.role ? `<div class="rc-related"><span class="tag"><b>Role</b> ${esc(r.role)}</span></div>` : ""}
       <div class="rc-foot">
-        ${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">View on Open Archives ↗</a>` : "<span></span>"}
+        ${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">View on ${esc(label)} ↗</a>` : "<span></span>"}
       </div>`;
     listEl.appendChild(card);
   }
@@ -493,3 +650,4 @@ function hideRecordsMessage() { const m = $("#recordsMessage"); m.hidden = true;
 
 // init
 renderRecordsGate();
+ensureSourceToggle(); // learn which optional sources (Europeana) are configured
