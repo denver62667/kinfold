@@ -59,6 +59,10 @@
       <div class="results-head">
         <h2 class="section-label">Findings <span id="resultCount" class="count"></span></h2>
         <div class="results-actions">
+          <label class="threshold" id="thresholdWrap" hidden>
+            <span class="th-label">min relevance <b id="thVal">0%</b></span>
+            <input type="range" id="threshold" min="0" max="100" step="5" value="0" />
+          </label>
           <div class="view-toggle" id="viewToggle" role="tablist" hidden>
             <button type="button" class="vt-btn is-active" data-rview="best" role="tab">Best matches</button>
             <button type="button" class="vt-btn" data-rview="source" role="tab">By source</button>

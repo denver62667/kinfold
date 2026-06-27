@@ -69,11 +69,15 @@ npm start                 # http://localhost:3000
    (the years you know your person lived within).
 2. Tick the sources you want, then **Search archives**.
 3. Results default to **Best matches** — one list merged across every source and
-   ranked by relevance, each card tagged with where it came from. Flip to **By
-   source** to see them grouped per archive with per-source counts. Either way each
-   card carries a relevance score and, where available, a snippet (newspaper OCR,
-   book description); follow **View source** to the original document.
-4. **Export CSV** saves your findings (ranked, source-tagged) as a research log.
+   ranked by relevance, each card tagged with where it came from. When the same
+   person turns up in several sources, the records **collapse into one card** (the
+   strongest is the face; the rest fold into an "also found in…" expander). Flip to
+   **By source** to see everything grouped per archive with per-source counts.
+4. Drag **min relevance** to hide weak matches; the count and both views update live.
+5. Each card carries a relevance score and, where available, a snippet (newspaper
+   OCR, book description); follow **View source** to the original document.
+6. **Export CSV** saves your findings (ranked, source-tagged, threshold-respecting)
+   as a research log.
 
 ## Publishing it for others
 
