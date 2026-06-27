@@ -13,7 +13,7 @@ import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SOURCES, listSources, getSource } from "./sources/index.js";
+import { listSources, getSource, isAvailable, availableSources } from "./sources/index.js";
 import { scoreRecord } from "./scoring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,9 +64,11 @@ app.get("/api/search", wrap(async (req, res) => {
 
   const requested = (req.query.sources || "")
     .split(",").map((s) => s.trim()).filter(Boolean);
+  // Explicit selection is honored but still gated on availability (a key-gated
+  // source with no key is skipped rather than erroring); default is everything usable.
   const chosen = requested.length
-    ? requested.map(getSource).filter(Boolean)
-    : SOURCES;
+    ? requested.map(getSource).filter((s) => s && isAvailable(s))
+    : availableSources();
 
   const groups = await Promise.all(
     chosen.map(async (src) => {

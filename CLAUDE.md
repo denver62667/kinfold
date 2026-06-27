@@ -31,6 +31,10 @@ server/
     openarchives.js     Open Archives client (NL/BE/FR vital records; no auth).
     chroniclingamerica.js  Library of Congress historic newspapers (no auth).
     internetarchive.js  archive.org digitized texts/genealogies (no auth).
+    locgov.js           Library of Congress digital collections (no auth).
+    nationalarchivesuk.js  National Archives UK Discovery descriptions (no auth).
+    dpla.js             Digital Public Library of America (free key, gated).
+    trove.js            Trove / National Library of Australia (free key, gated).
 public/
   index.html       Single search view (name-led form + source toggles + results).
   styles.css       "Case-file" visual system; CSS variables at :root.
@@ -55,8 +59,10 @@ isolated error reporting (one failing source can't break the response).
   (`snippet` is an OCR/description excerpt for document sources). To add a source:
   write the module, then register it in `server/sources/index.js` with
   `{ id, label, accent, region, description, search }`. Mirror an existing source.
-- **No API keys.** Every source is free and no-auth. If a future source needs a key,
-  gate it so the app still runs without it (and hide it in `/api/sources`).
+- **Keys are the exception, and always gated.** The core sources are free and
+  no-auth. A key-gated source (DPLA, Trove) declares an `available()` predicate in the
+  registry returning false until its key is set — `listSources()` hides it from
+  `/api/sources` and `/api/search` skips it, so the app always runs without keys.
 - **Scoring ranks, it never asserts.** `scoring.js → scoreRecord(query, rec)` returns a
   0..1 relevance used only to order/surface records. A record is **evidence for the
   user to weigh**, not a verified fact and never an identity merge. Be honest about
@@ -69,9 +75,10 @@ isolated error reporting (one failing source can't break the response).
 ## Source accents (UI)
 
 Open Archives = teal `--records`; Chronicling America = burnt sienna `--news`;
-Internet Archive = slate blue `--texts`. A new source gets one new accent; wire it via
-the `accent` field in the registry and an `.acc-<name>` / `.record-card.acc-<name>`
-block in `styles.css`.
+Internet Archive = slate blue `--texts`; Library of Congress = plum `--loc`; National
+Archives UK = navy `--tna`; DPLA = olive `--dpla`; Trove = berry `--trove`. A new
+source gets one new accent: add the color to `:root` and one `.acc-<name> { --src: … }`
+line in `styles.css` (the component rules read `--src`).
 
 ## Routes (server/index.js)
 
@@ -89,10 +96,12 @@ server state — so it scales trivially and restarts cleanly. Production sets
 
 ## Sources
 
-All three are free and need no key. **Open Archives** (openarch.nl) — NL/BE/FR vital
-records (births, baptisms, marriages, deaths), the primary documents. **Chronicling
-America** (Library of Congress) — full-text historic US newspapers, where a name
-search turns up notices, obituaries, and mentions. **Internet Archive** (archive.org)
-— digitized published genealogies, family/local histories, and biographical works
-that *reference* people. The source layer is pluggable; add more name-searchable
-document sources the same way.
+Five are free and need no key: **Open Archives** (openarch.nl) — NL/BE/FR vital
+records, the primary documents; **Chronicling America** (LoC) — full-text historic US
+newspapers; **Internet Archive** (archive.org) — digitized genealogies and local
+histories that *reference* people; **Library of Congress** (loc.gov) — photographs,
+manuscripts, directories and printed works; **National Archives UK** (Discovery) —
+~35M archival descriptions of wills, military, court, and immigration records. Two are
+free but key-gated (hidden until their key is set): **DPLA** (dp.la) — US
+libraries/archives/museums; **Trove** (nla.gov.au) — Australian newspapers & gazettes.
+The source layer is pluggable; add more name-searchable document sources the same way.

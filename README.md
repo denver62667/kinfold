@@ -10,16 +10,25 @@ Those hand you a curated tree; Kinfold hands you the underlying documents and le
 you judge them. Records are presented as **evidence to weigh**, never as verified
 facts.
 
-## Sources (all free, no API key)
+## Sources
 
-| Source | What it holds | Region |
-|---|---|---|
-| **Open Archives** (openarch.nl) | Vital records — births, baptisms, marriages, deaths | Netherlands · Belgium · France |
-| **Chronicling America** (Library of Congress) | Full-text historic newspapers — notices, obituaries, mentions | United States · 1756–1963 |
-| **Internet Archive** (archive.org) | Digitized published genealogies, family & local histories, biographical works, directories | Worldwide |
+Most are free and **need no API key**. Two (DPLA, Trove) use a free key and stay
+hidden until you set it — the app runs fine without them.
+
+| Source | What it holds | Region | Key |
+|---|---|---|---|
+| **Open Archives** (openarch.nl) | Vital records — births, baptisms, marriages, deaths | Netherlands · Belgium · France | — |
+| **Chronicling America** (Library of Congress) | Full-text historic newspapers — notices, obituaries, mentions | United States · 1756–1963 | — |
+| **Internet Archive** (archive.org) | Digitized published genealogies, family & local histories, biographical works, directories | Worldwide | — |
+| **Library of Congress** (loc.gov) | Photographs, manuscripts, city directories, printed works | United States · broad | — |
+| **National Archives UK** (Discovery) | ~35M archival descriptions — wills, military, court, prison, immigration | UK · Commonwealth | — |
+| **DPLA** (dp.la) | 50M+ items from US libraries, archives & museums | United States · aggregated | free key |
+| **Trove** (nla.gov.au) | Digitised newspapers & gazettes | Australia · NZ | free key |
 
 The source layer is pluggable — adding another name-searchable document source is a
-single module plus one registry entry (see `server/sources/`).
+single module plus one registry entry (see `server/sources/`). Key-gated sources
+declare an `available()` predicate so they're hidden from `/api/sources` until their
+key is set.
 
 ## Why there's a backend (and not just a webpage)
 
@@ -71,12 +80,14 @@ instance needs no secrets and restarts cleanly.
 
 ## .env
 
-| Variable   | What it is                                            |
-|------------|-------------------------------------------------------|
-| `PORT`     | Port for the local server (default 3000)              |
-| `NODE_ENV` | Set to `production` behind a platform load balancer   |
+| Variable        | What it is                                                          |
+|-----------------|---------------------------------------------------------------------|
+| `PORT`          | Port for the local server (default 3000)                            |
+| `NODE_ENV`      | Set to `production` behind a platform load balancer                 |
+| `DPLA_API_KEY`  | *Optional, free.* Enables the DPLA source. Hidden until set.        |
+| `TROVE_API_KEY` | *Optional, free.* Enables the Trove source. Hidden until set.       |
 
-(No API keys — nothing else to configure.)
+(The five core sources need no keys; the two optional keys above just unlock extra sources.)
 
 ## How it's built
 

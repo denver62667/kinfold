@@ -11,6 +11,10 @@
   --records: #2f6b63;   /* teal — Open Archives vital records */
   --news: #9a4b2c;      /* burnt sienna — Chronicling America newspapers */
   --texts: #45557f;     /* slate blue — Internet Archive digitized texts */
+  --loc: #6b4a8a;       /* plum — Library of Congress */
+  --tna: #355070;       /* navy — National Archives UK */
+  --dpla: #4a7a3a;      /* olive — DPLA */
+  --trove: #9a3b5a;     /* berry — Trove */
 
   --conflict: #9a3b22;  /* oxblood — errors/notes */
 
@@ -111,7 +115,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 .source-toggle {
   display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
   background: var(--panel); border: 1px solid var(--panel-edge);
-  border-left: 4px solid var(--records); border-radius: 2px; padding: 11px 13px;
+  border-left: 4px solid var(--src, var(--records)); border-radius: 2px; padding: 11px 13px;
   box-shadow: var(--shadow-sm); transition: box-shadow 0.15s var(--ease), transform 0.12s var(--ease);
 }
 .source-toggle:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
@@ -141,21 +145,21 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 }
 .group-name {
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--records);
+  text-transform: uppercase; color: var(--src, var(--records));
 }
 .group-note { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
 
 /* ---------- record cards ---------- */
 .record-card {
   background: var(--panel); border: 1px solid var(--panel-edge);
-  border-left: 4px solid var(--records); border-radius: 2px;
+  border-left: 4px solid var(--src, var(--records)); border-radius: 2px;
   padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow-sm);
   transition: transform 0.12s var(--ease), box-shadow 0.15s var(--ease);
 }
 .record-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .rc-collection {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--records); display: block; margin-bottom: 5px;
+  text-transform: uppercase; color: var(--src, var(--records)); display: block; margin-bottom: 5px;
 }
 .rc-name { font-family: var(--font-display); font-weight: 600; font-size: 20px; }
 .rc-vitals { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
@@ -170,23 +174,19 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
   border-left: 2px solid var(--rule); font-style: italic;
 }
 .rc-foot { margin-top: 11px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.rc-foot a { font-family: var(--font-mono); font-size: 12px; color: var(--records); text-decoration: none; border-bottom: 1px dotted var(--records); }
+.rc-foot a { font-family: var(--font-mono); font-size: 12px; color: var(--src, var(--records)); text-decoration: none; border-bottom: 1px dotted var(--src, var(--records)); }
 .rc-score { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
 
-/* ---------- per-source accents (acc-<accent> from the registry) ---------- */
+/* ---------- per-source accents (acc-<accent> from the registry) ----------
+   Each source just maps its accent name to a color; the component rules above
+   read --src. Adding a source = one color in :root + one line here. */
 .acc-records { --src: var(--records); }
-.acc-news { --src: var(--news); }
-.acc-texts { --src: var(--texts); }
-.source-toggle.acc-news { border-left-color: var(--news); }
-.source-toggle.acc-texts { border-left-color: var(--texts); }
-.group.acc-news .group-name { color: var(--news); }
-.group.acc-texts .group-name { color: var(--texts); }
-.record-card.acc-news { border-left-color: var(--news); }
-.record-card.acc-news .rc-collection,
-.record-card.acc-news .rc-foot a { color: var(--news); border-bottom-color: var(--news); }
-.record-card.acc-texts { border-left-color: var(--texts); }
-.record-card.acc-texts .rc-collection,
-.record-card.acc-texts .rc-foot a { color: var(--texts); border-bottom-color: var(--texts); }
+.acc-news    { --src: var(--news); }
+.acc-texts   { --src: var(--texts); }
+.acc-loc     { --src: var(--loc); }
+.acc-tna     { --src: var(--tna); }
+.acc-dpla    { --src: var(--dpla); }
+.acc-trove   { --src: var(--trove); }
 
 /* ---------- messages / misc ---------- */
 .message { margin-top: 20px; padding: 13px 16px; border-left: 3px solid var(--conflict); background: var(--panel); font-size: 15px; }
