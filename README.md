@@ -22,6 +22,7 @@ hidden until you set it — the app runs fine without them.
 | **Internet Archive** (archive.org) | Digitized published genealogies, family & local histories, biographical works, directories | Worldwide | — |
 | **Library of Congress** (loc.gov) | Photographs, manuscripts, city directories, printed works | United States · broad | — |
 | **National Archives UK** (Discovery) | ~35M archival descriptions — wills, military, court, prison, immigration | UK · Commonwealth | — |
+| **Digital Repository of Ireland** (dri.ie) | Irish archival collections — letters, photos, parish & institutional records, oral histories | Ireland | — |
 | **DPLA** (dp.la) | 50M+ items from US libraries, archives & museums | United States · aggregated | free key |
 | **Trove** (nla.gov.au) | Digitised newspapers & gazettes | Australia · NZ | free key |
 
@@ -87,7 +88,7 @@ instance needs no secrets and restarts cleanly.
 | `DPLA_API_KEY`  | *Optional, free.* Enables the DPLA source. Hidden until set.        |
 | `TROVE_API_KEY` | *Optional, free.* Enables the Trove source. Hidden until set.       |
 
-(The five core sources need no keys; the two optional keys above just unlock extra sources.)
+(The six core sources need no keys; the two optional keys above just unlock extra sources.)
 
 ## How it's built
 

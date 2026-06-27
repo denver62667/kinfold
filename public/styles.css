@@ -15,6 +15,7 @@
   --tna: #355070;       /* navy — National Archives UK */
   --dpla: #4a7a3a;      /* olive — DPLA */
   --trove: #9a3b5a;     /* berry — Trove */
+  --dri: #a07a1f;       /* gold — Digital Repository of Ireland */
 
   --conflict: #9a3b22;  /* oxblood — errors/notes */
 
@@ -187,6 +188,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 .acc-tna     { --src: var(--tna); }
 .acc-dpla    { --src: var(--dpla); }
 .acc-trove   { --src: var(--trove); }
+.acc-dri     { --src: var(--dri); }
 
 /* ---------- messages / misc ---------- */
 .message { margin-top: 20px; padding: 13px 16px; border-left: 3px solid var(--conflict); background: var(--panel); font-size: 15px; }

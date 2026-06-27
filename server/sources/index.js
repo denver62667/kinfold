@@ -15,6 +15,7 @@ import * as chroniclingamerica from "./chroniclingamerica.js";
 import * as internetarchive from "./internetarchive.js";
 import * as locgov from "./locgov.js";
 import * as nationalarchivesuk from "./nationalarchivesuk.js";
+import * as dri from "./dri.js";
 import * as dpla from "./dpla.js";
 import * as trove from "./trove.js";
 
@@ -58,6 +59,14 @@ export const SOURCES = [
     region: "UK · Commonwealth",
     description: "~35M archival descriptions — wills, military service, court, prison and immigration records.",
     search: nationalarchivesuk.searchRecords
+  },
+  {
+    id: "dri",
+    label: "Digital Repository of Ireland",
+    accent: "dri",
+    region: "Ireland",
+    description: "Irish archival collections — letters, photos, parish & institutional records, oral histories.",
+    search: dri.searchRecords
   },
   {
     id: "dpla",

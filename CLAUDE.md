@@ -33,6 +33,7 @@ server/
     internetarchive.js  archive.org digitized texts/genealogies (no auth).
     locgov.js           Library of Congress digital collections (no auth).
     nationalarchivesuk.js  National Archives UK Discovery descriptions (no auth).
+    dri.js              Digital Repository of Ireland (no auth).
     dpla.js             Digital Public Library of America (free key, gated).
     trove.js            Trove / National Library of Australia (free key, gated).
 public/
@@ -76,7 +77,8 @@ isolated error reporting (one failing source can't break the response).
 
 Open Archives = teal `--records`; Chronicling America = burnt sienna `--news`;
 Internet Archive = slate blue `--texts`; Library of Congress = plum `--loc`; National
-Archives UK = navy `--tna`; DPLA = olive `--dpla`; Trove = berry `--trove`. A new
+Archives UK = navy `--tna`; Digital Repository of Ireland = gold `--dri`; DPLA = olive
+`--dpla`; Trove = berry `--trove`. A new
 source gets one new accent: add the color to `:root` and one `.acc-<name> { --src: … }`
 line in `styles.css` (the component rules read `--src`).
 
@@ -101,7 +103,9 @@ records, the primary documents; **Chronicling America** (LoC) — full-text hist
 newspapers; **Internet Archive** (archive.org) — digitized genealogies and local
 histories that *reference* people; **Library of Congress** (loc.gov) — photographs,
 manuscripts, directories and printed works; **National Archives UK** (Discovery) —
-~35M archival descriptions of wills, military, court, and immigration records. Two are
-free but key-gated (hidden until their key is set): **DPLA** (dp.la) — US
+~35M archival descriptions of wills, military, court, and immigration records;
+**Digital Repository of Ireland** (dri.ie) — Irish archival collections (letters,
+photos, parish/institutional records, oral histories). Two are free but key-gated
+(hidden until their key is set): **DPLA** (dp.la) — US
 libraries/archives/museums; **Trove** (nla.gov.au) — Australian newspapers & gazettes.
 The source layer is pluggable; add more name-searchable document sources the same way.
