@@ -13,7 +13,10 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 let SOURCES = [];        // [{ id, label, accent, region, description }]
-let lastResults = [];    // flat list of records for CSV export
+let lastGroups = [];     // raw response groups (for the by-source view)
+let ranked = [];         // every record, source-tagged and sorted by score desc
+let lastResults = [];    // flat list of records for CSV export (== ranked)
+let resultsView = "best"; // "best" (cross-source, ranked) | "source" (grouped)
 
 // ---------- sources ----------
 async function loadSources() {
@@ -93,22 +96,60 @@ async function runSearch() {
 }
 
 function renderResults(data) {
-  const groupList = $("#groupList");
-  groupList.innerHTML = "";
-  lastResults = [];
+  lastGroups = data.groups || [];
 
-  const groups = data.groups || [];
-  const totalShown = groups.reduce((n, g) => n + (g.results ? g.results.length : 0), 0);
-  $("#resultCount").textContent = totalShown ? `(${totalShown} shown)` : "";
+  // Flatten every record across sources, tag it with its source's label/accent, and
+  // rank by relevance — the basis for the "best matches" view (and CSV export).
+  ranked = [];
+  for (const g of lastGroups) {
+    for (const r of g.results || []) {
+      ranked.push({ ...r, _label: g.label || g.source, _accent: g.accent || "records" });
+    }
+  }
+  ranked.sort((a, b) => (b.score || 0) - (a.score || 0));
+  lastResults = ranked.map((r) => ({ ...r, sourceLabel: r._label }));
 
-  if (!totalShown && !groups.some((g) => g.error)) {
-    groupList.appendChild(el("div", "loading",
+  const total = ranked.length;
+  const hasErrors = lastGroups.some((g) => g.error);
+  $("#resultCount").textContent = total ? `(${total} shown)` : "";
+  $("#viewToggle").hidden = total === 0;
+  $("#exportBtn").hidden = total === 0;
+
+  if (!total && !hasErrors) {
+    $("#groupList").innerHTML = "";
+    $("#groupList").appendChild(el("div", "loading",
       "No records matched across the chosen sources. Try just a surname, widen the years, or drop the place."));
-    $("#exportBtn").hidden = true;
     return;
   }
+  renderResultsView();
+}
 
-  for (const g of groups) {
+// Render whichever view is selected; keep the toggle buttons in sync.
+function renderResultsView() {
+  for (const b of document.querySelectorAll(".vt-btn")) {
+    b.classList.toggle("is-active", b.dataset.rview === resultsView);
+  }
+  if (resultsView === "best") renderBest();
+  else renderBySource();
+}
+
+// Cross-source: one list, ranked by relevance, each card tagged with its source.
+function renderBest() {
+  const groupList = $("#groupList");
+  groupList.innerHTML = "";
+  if (ranked.length) {
+    const list = el("div", "best-list");
+    for (const r of ranked) list.appendChild(recordCard(r, r._accent, r._label));
+    groupList.appendChild(list);
+  }
+  appendErrorNotes(groupList);
+}
+
+// Grouped: one section per source, each with its own count.
+function renderBySource() {
+  const groupList = $("#groupList");
+  groupList.innerHTML = "";
+  for (const g of lastGroups) {
     const section = el("section", `group acc-${g.accent || "records"}`);
     const head = el("div", "group-head");
     const count = g.error ? "" : `<span class="count">${g.results.length}${g.total > g.results.length ? " of " + g.total : ""}</span>`;
@@ -120,24 +161,32 @@ function renderResults(data) {
     } else if (!g.results.length) {
       section.appendChild(el("div", "group-note", "No matches from this source."));
     } else {
-      for (const r of g.results) {
-        section.appendChild(recordCard(r, g.accent));
-        lastResults.push({ ...r, sourceLabel: g.label });
-      }
+      for (const r of g.results) section.appendChild(recordCard(r, g.accent));
     }
     groupList.appendChild(section);
   }
-
-  $("#exportBtn").hidden = lastResults.length === 0;
 }
 
-function recordCard(r, accent) {
+// In the best-matches view, sources that failed are summarized at the end so a
+// failure isn't silently hidden by the cross-source merge.
+function appendErrorNotes(container) {
+  const errs = lastGroups.filter((g) => g.error);
+  if (!errs.length) return;
+  const note = el("div", "group-note err-note",
+    "Unavailable: " + errs.map((g) => esc(g.label || g.source)).join(", "));
+  container.appendChild(note);
+}
+
+function recordCard(r, accent, sourceLabel) {
   const card = el("article", `record-card acc-${accent || "records"}`);
   const meta = [r.eventType, r.eventDate, r.eventPlace].filter(Boolean).map(esc).join(" &nbsp;·&nbsp; ");
   const src = [r.sourceType, r.archive].filter(Boolean).map(esc).join(" — ");
   const pct = Math.round((r.score || 0) * 100);
   card.innerHTML = `
-    ${src ? `<span class="rc-collection">${src}</span>` : ""}
+    <div class="rc-top">
+      ${src ? `<span class="rc-collection">${src}</span>` : "<span></span>"}
+      ${sourceLabel ? `<span class="rc-source">${esc(sourceLabel)}</span>` : ""}
+    </div>
     <span class="rc-name">${esc(r.name || "Untitled record")}</span>
     ${meta ? `<div class="rc-vitals">${meta}</div>` : ""}
     ${r.role ? `<div class="rc-related"><span class="tag"><b>Role</b> ${esc(r.role)}</span></div>` : ""}
@@ -148,6 +197,14 @@ function recordCard(r, accent) {
     </div>`;
   return card;
 }
+
+// view toggle
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".vt-btn");
+  if (!btn || btn.dataset.rview === resultsView) return;
+  resultsView = btn.dataset.rview;
+  renderResultsView();
+});
 
 // ---------- CSV export (a research log of what was found) ----------
 $("#exportBtn").addEventListener("click", () => {

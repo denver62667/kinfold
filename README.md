@@ -68,10 +68,12 @@ npm start                 # http://localhost:3000
 1. Enter a name — at least a surname. Optionally add a place and a year range
    (the years you know your person lived within).
 2. Tick the sources you want, then **Search archives**.
-3. Results come back grouped per source, each with a relevance score and, where
-   available, a snippet (newspaper OCR, book description). Follow **View source** to
-   the original document.
-4. **Export CSV** saves your findings as a research log.
+3. Results default to **Best matches** — one list merged across every source and
+   ranked by relevance, each card tagged with where it came from. Flip to **By
+   source** to see them grouped per archive with per-source counts. Either way each
+   card carries a relevance score and, where available, a snippet (newspaper OCR,
+   book description); follow **View source** to the original document.
+4. **Export CSV** saves your findings (ranked, source-tagged) as a research log.
 
 ## Publishing it for others
 

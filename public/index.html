@@ -58,7 +58,13 @@
     <section id="results" class="results" hidden aria-label="Results">
       <div class="results-head">
         <h2 class="section-label">Findings <span id="resultCount" class="count"></span></h2>
-        <button id="exportBtn" class="btn-ghost" hidden>Export CSV ↓</button>
+        <div class="results-actions">
+          <div class="view-toggle" id="viewToggle" role="tablist" hidden>
+            <button type="button" class="vt-btn is-active" data-rview="best" role="tab">Best matches</button>
+            <button type="button" class="vt-btn" data-rview="source" role="tab">By source</button>
+          </div>
+          <button id="exportBtn" class="btn-ghost" hidden>Export CSV ↓</button>
+        </div>
       </div>
       <div id="groupList"></div>
     </section>
