@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kinfold — cross-source genealogy</title>
+  <title>Kinfold — document-first genealogy search</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Spectral:ital,wght@0,400;0,500;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -13,131 +13,61 @@
   <header class="masthead">
     <div class="masthead-inner">
       <div class="wordmark">
-        <span class="eyebrow">cross-source research</span>
+        <span class="eyebrow">document-first genealogy search</span>
         <h1>Kinfold</h1>
       </div>
     </div>
-    <nav class="tabs" role="tablist">
-      <button class="tab is-active" role="tab" data-view="tree" id="tab-tree">Cross-reference</button>
-      <button class="tab" role="tab" data-view="records" id="tab-records">Record search</button>
-      <button class="tab" role="tab" data-view="agent" id="tab-agent">Auto-build</button>
-    </nav>
   </header>
 
   <main>
-    <!-- ===================== TREE VIEW ===================== -->
-    <div id="view-tree" class="view">
-      <section class="search" aria-label="Find a person">
-        <form id="searchForm">
-          <div class="field field-grow">
-            <label for="firstName">Given name</label>
-            <input id="firstName" name="firstName" placeholder="Samuel" autocomplete="off" />
-          </div>
-          <div class="field field-grow">
-            <label for="lastName">Surname at birth</label>
-            <input id="lastName" name="lastName" placeholder="Clemens" autocomplete="off" />
-          </div>
-          <div class="field field-year">
-            <label for="birthDate">Born ~</label>
-            <input id="birthDate" name="birthDate" placeholder="1835" inputmode="numeric" autocomplete="off" />
-          </div>
-          <button type="submit" class="btn-primary">Search WikiTree</button>
-        </form>
-        <p class="hint">Search the open tree first, then open a file to see the cross-source record.</p>
-      </section>
+    <section class="search" aria-label="Search the archives">
+      <p class="lede">You know who you're looking for. Kinfold searches free document
+        and record archives at once — newspapers, vital records, and digitized
+        histories — to surface references that might tell you something new.</p>
 
-      <section id="matches" class="matches" hidden aria-label="Matches">
-        <h2 class="section-label">Matches <span id="matchCount" class="count"></span></h2>
-        <div id="matchList" class="match-list"></div>
-      </section>
-
-      <section id="dossier" class="dossier" hidden aria-label="Dossier"></section>
-      <div id="message" class="message" hidden></div>
-    </div>
-
-    <!-- ===================== RECORDS VIEW ===================== -->
-    <div id="view-records" class="view" hidden>
-      <section class="search" aria-label="Search historical records">
-        <div id="recordsGate"></div>
-        <form id="recordsForm">
-          <div class="field">
-            <label for="recSource">Source</label>
-            <select id="recSource">
-              <option value="openarchives">Open Archives · NL/BE/FR</option>
-              <option value="europeana" id="recSourceEuropeana" disabled hidden>Europeana · UK/DE/EU</option>
-            </select>
-          </div>
-          <div class="field field-grow">
-            <label for="recGiven">Given name</label>
-            <input id="recGiven" placeholder="Samuel" autocomplete="off" />
-          </div>
-          <div class="field field-grow">
-            <label for="recSurname">Surname</label>
-            <input id="recSurname" placeholder="Clemens" autocomplete="off" />
-          </div>
-          <div class="field field-grow">
-            <label for="recBirthPlace">Place</label>
-            <input id="recBirthPlace" placeholder="Florida, Missouri" autocomplete="off" />
-          </div>
-          <div class="field" id="recCountryField" hidden>
-            <label for="recCountry">Country</label>
-            <select id="recCountry">
-              <option value="">Any</option>
-              <option value="United Kingdom">United Kingdom</option>
-              <option value="Germany">Germany</option>
-              <option value="Netherlands">Netherlands</option>
-              <option value="Belgium">Belgium</option>
-              <option value="France">France</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-records btn-records-submit">Search records</button>
-        </form>
-        <p class="hint" id="oaHint">Searches Open Archives — free Dutch, Belgian and French records. No login needed; uses name and place.</p>
-      </section>
-
-      <section id="records" class="matches" hidden aria-label="Record results">
-        <h2 class="section-label">Records <span id="recordCount" class="count"></span></h2>
-        <div id="recordList" class="record-list"></div>
-        <div id="recordPager" class="pager" hidden></div>
-      </section>
-      <div id="recordsMessage" class="message" hidden></div>
-    </div>
-
-    <!-- ===================== AUTO-BUILD (AGENT) VIEW ===================== -->
-    <div id="view-agent" class="view" hidden>
-      <section class="agent-head">
-        <p class="agent-intro">The agent climbs the WikiTree skeleton and matches each
-          person against Wikidata. High-confidence matches merge automatically; it
-          stops to ask you about the uncertain ones.</p>
-        <div class="agent-controls">
-          <div class="field field-grow">
-            <label for="agentSeed">Start from WikiTree ID</label>
-            <input id="agentSeed" placeholder="Clemens-1" autocomplete="off" />
-          </div>
-          <div class="field field-year">
-            <label for="agentGens">Generations</label>
-            <select id="agentGens">
-              <option value="2">2</option>
-              <option value="3" selected>3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
-          </div>
-          <button id="agentStartBtn" class="btn-primary">Build tree</button>
+      <form id="searchForm">
+        <div class="field field-grow">
+          <label for="given">Given name</label>
+          <input id="given" name="given" placeholder="Samuel" autocomplete="off" />
         </div>
-        <label class="agent-opt"><input type="checkbox" id="agentWD" checked /> Match against Wikidata (no login — notable and historic figures, centuries back)</label>
-        <label class="agent-opt"><input type="checkbox" id="agentOA" checked /> Corroborate with Open Archives records (Dutch/Belgian/French lines)</label>
-      </section>
+        <div class="field field-grow">
+          <label for="surname">Surname</label>
+          <input id="surname" name="surname" placeholder="Clemens" autocomplete="off" />
+        </div>
+        <div class="field field-grow">
+          <label for="place">Place</label>
+          <input id="place" name="place" placeholder="Missouri" autocomplete="off" />
+        </div>
+        <div class="field field-year">
+          <label for="fromYear">From</label>
+          <input id="fromYear" name="fromYear" placeholder="1835" inputmode="numeric" autocomplete="off" />
+        </div>
+        <div class="field field-year">
+          <label for="toYear">To</label>
+          <input id="toYear" name="toYear" placeholder="1910" inputmode="numeric" autocomplete="off" />
+        </div>
+        <button type="submit" class="btn-primary">Search archives</button>
+      </form>
 
-      <div id="agentStatus" class="agent-status" hidden></div>
-      <section id="agentQuestions" class="agent-questions" hidden></section>
-      <section id="agentTree" class="agent-tree" hidden></section>
-      <div id="agentMessage" class="message" hidden></div>
-    </div>
+      <fieldset class="sources" id="sources" aria-label="Sources">
+        <legend>Sources</legend>
+        <div id="sourceList" class="source-list"><span class="loading">Loading sources…</span></div>
+      </fieldset>
+    </section>
+
+    <section id="results" class="results" hidden aria-label="Results">
+      <div class="results-head">
+        <h2 class="section-label">Findings <span id="resultCount" class="count"></span></h2>
+        <button id="exportBtn" class="btn-ghost" hidden>Export CSV ↓</button>
+      </div>
+      <div id="groupList"></div>
+    </section>
+
+    <div id="message" class="message" hidden></div>
   </main>
 
   <footer class="colophon">
-    <span>WikiTree (open tree) + Wikidata &amp; Open Archives, reconciled.</span>
+    <span>Open Archives · Chronicling America · Internet Archive — free, no login. Records are evidence to weigh, not verified facts.</span>
   </footer>
 
   <script src="app.js"></script>

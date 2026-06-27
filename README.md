@@ -1,129 +1,117 @@
-# Kinfold — cross-reference a person across WikiTree + Wikidata
+# Kinfold — document-first genealogy search
 
-A small research tool that takes one person and "digs deeper" by pulling their
-record from **WikiTree** (open, collaborative tree) and **Wikidata** (structured
-persons with dates, places, and kinship links), then lining the two up so you can
-see what matches, what conflicts, and what only one source knows. **Open Archives**
-adds free historical records as corroboration.
+You already know who you're looking for. **Kinfold** takes a name (plus optional
+place and year range) and searches free, no-login archives of **documents and
+references about people** — historic newspapers, vital records, and digitized
+histories — all at once, surfacing material that might tell you something *new*.
+
+It is deliberately **not** a lineage/tree database like WikiTree or FamilySearch.
+Those hand you a curated tree; Kinfold hands you the underlying documents and lets
+you judge them. Records are presented as **evidence to weigh**, never as verified
+facts.
+
+## Sources (all free, no API key)
+
+| Source | What it holds | Region |
+|---|---|---|
+| **Open Archives** (openarch.nl) | Vital records — births, baptisms, marriages, deaths | Netherlands · Belgium · France |
+| **Chronicling America** (Library of Congress) | Full-text historic newspapers — notices, obituaries, mentions | United States · 1756–1963 |
+| **Internet Archive** (archive.org) | Digitized published genealogies, family & local histories, biographical works, directories | Worldwide |
+
+The source layer is pluggable — adding another name-searchable document source is a
+single module plus one registry entry (see `server/sources/`).
 
 ## Why there's a backend (and not just a webpage)
 
-Neither API is ideal to call straight from the browser:
-
-- **WikiTree** does not send permissive CORS headers. Its own example code notes
-  `api.wikitree.com disallows cross-origin:*`, so a browser on any non-WikiTree
-  domain gets blocked. Calling it **server-side** sidesteps CORS entirely.
-- **Wikidata** requires a descriptive `User-Agent` on every request (Wikimedia
-  policy; blank UAs get blocked). That's set server-side, and proxying keeps all
-  external calls in one place.
-
-So this app is a thin Node/Express backend that proxies the APIs and does the
-fact reconciliation, with a static frontend that only ever talks to your backend.
+These archives are awkward to call straight from the browser: some require a
+descriptive `User-Agent`, and browsers hit CORS / rate-limit walls. So Kinfold is a
+thin Node/Express backend that proxies the APIs, scores results for relevance, and
+serves a static frontend that only ever talks to your backend.
 
 ```
-browser ──▶ your Express backend ──▶ api.wikitree.com
-                              ├────▶ wikidata.org (Action API)
-                              └────▶ api.openarch.nl
+browser ──▶ your Express backend ──▶ api.openarch.nl
+                              ├────▶ chroniclingamerica.loc.gov
+                              └────▶ archive.org
 ```
+
+`GET /api/search` fans out to every chosen source **in parallel**; each is isolated,
+so one slow or failing source can't sink the rest.
 
 ## Prerequisites
 
 - Node.js 18+ (uses the built-in global `fetch`)
-- No API keys required — WikiTree (public profiles), Wikidata, and Open Archives
-  all work without registration.
+- **No API keys, no accounts.** Every source is free and anonymous.
 
 ## Setup
 
-**New to this? See [SETUP.md](SETUP.md) for a detailed, step-by-step walkthrough**
-(installing Node, troubleshooting). The short version:
+**New to this? See [SETUP.md](SETUP.md)** for a step-by-step walkthrough. The short
+version:
 
 ```bash
-cp .env.example .env      # optional; sensible defaults work out of the box
-npm install
+cp .env.example .env      # optional; defaults work out of the box
+npm install               # only express + dotenv
 npm start                 # http://localhost:3000
 ```
 
+## How to use it
+
+1. Enter a name — at least a surname. Optionally add a place and a year range
+   (the years you know your person lived within).
+2. Tick the sources you want, then **Search archives**.
+3. Results come back grouped per source, each with a relevance score and, where
+   available, a snippet (newspaper OCR, book description). Follow **View source** to
+   the original document.
+4. **Export CSV** saves your findings as a research log.
+
 ## Publishing it for others
 
-To host a shared instance, see **[DEPLOY.md](DEPLOY.md)**. It covers a one-file
-Render deploy (`render.yaml`), Docker, and production environment variables.
-Because no source needs an API key, a public instance works with no approval step.
+See **[DEPLOY.md](DEPLOY.md)** — a one-file Render deploy (`render.yaml`), Docker, and
+production notes. The app is **stateless** (no sessions, no database), so a public
+instance needs no secrets and restarts cleanly.
 
 ## .env
 
-| Variable          | What it is                                                        |
-|-------------------|-------------------------------------------------------------------|
-| `PORT`            | Port for the local server (default 3000)                          |
-| `SESSION_SECRET`  | Any random string; signs the session cookie                       |
-| `WIKITREE_APP_ID` | A label identifying your app to WikiTree (no registration needed) |
-| `EUROPEANA_API_KEY` | *Optional.* Free key (no paid tier) enabling the Europeana record source — pan-European archives incl. UK/Scotland & Germany. Get one at <https://pro.europeana.eu/get-api>. Leave blank to keep it disabled. |
+| Variable   | What it is                                            |
+|------------|-------------------------------------------------------|
+| `PORT`     | Port for the local server (default 3000)              |
+| `NODE_ENV` | Set to `production` behind a platform load balancer   |
 
-## How to use it
+(No API keys — nothing else to configure.)
 
-1. Search a name (e.g. `Samuel Clemens`, optionally a birth year).
-2. Pick a WikiTree match — you'll get a dossier: vitals, bio, parents, spouses,
-   **plus an automatic cross-source reconciliation**: the person is matched against
-   the best Wikidata entity (alias-aware, so pen/maiden names still match) with a
-   fact-by-fact match/conflict table, and corroborated with Open Archives (and
-   Europeana, if configured). Opening a person uses every source, not just WikiTree.
-3. Use **Auto-build** to climb the tree and match each person against Wikidata.
-4. High-confidence matches merge automatically; uncertain ones become questions
-   you answer in the Auto-build tab.
+## How it's built
 
-## What works
-
-Working: WikiTree search, profile, relatives, ancestors; Wikidata person search +
-fetch (no auth) with deterministic fact reconciliation; **Open Archives**
-(openarch.nl) historical-record search in the Records tab — ~277M free
-Dutch/Belgian/French records — plus a "find records for this person" handoff from
-the dossier and paging through results. The Records tab also offers **Europeana**
-(api.europeana.eu) as a second source when `EUROPEANA_API_KEY` is set — pan-European
-archives and heritage records spanning the UK (incl. Scotland), Germany and beyond,
-with an optional country filter. It's gated by its key: with no key set, the option
-stays hidden and the rest of the app is unaffected.
-
-The **Auto-build agent** (`server/agent/`) builds a tree from a seed WikiTree
-person: it climbs the WikiTree skeleton and scores each person against
-**Wikidata** with a deterministic confidence model (`scoring.js`). High-confidence
-matches merge automatically; medium/conflicting ones become questions you answer
-in the Auto-build tab. Every decision is explainable (name/date/place breakdown),
-and name-only matches are never auto-merged. It also **corroborates each person
-with Open Archives** records (evidence only — never merging identity or expanding
-relationships, so it can't create false links): strong record matches add the
-source, nudge confidence, and are written into the export. The assembled tree
-exports as a **GEDCOM 5.5.1 file** (`agent/gedcom.js`) you can open in Ancestry,
-Gramps, RootsMagic, etc., with source provenance, match confidence, and Open
-Archives record citations written into record notes.
-
-Extension points:
-- The SPARQL endpoint for precise birth-year-filtered Wikidata queries
-- Persisting agent trees (they currently live in server memory)
+- **`server/sources/`** — one client per source, all exposing the same
+  `searchRecords({ name, place, fromYear, toYear, start, count })` contract and the
+  same flattened record shape, declared in `server/sources/index.js`.
+- **`server/scoring.js`** — pure, deterministic `scoreRecord(query, rec)`: name
+  similarity (Dice bigrams + whole-word containment) plus optional year-range and
+  place signals. It only *ranks* records; it never asserts identity.
+- **`server/index.js`** — `/api/sources` and `/api/search`. Stateless.
+- **`public/`** — single search view; `app.js` talks only to the backend.
 
 ## Files
 
 ```
-SETUP.md           Detailed local setup walkthrough
-DEPLOY.md          How to publish a shared instance
-Dockerfile         Container image for any container host
-render.yaml        One-file Render deploy blueprint
+SETUP.md                       Detailed local setup walkthrough
+DEPLOY.md                      How to publish a shared instance
+Dockerfile                     Container image for any container host
+render.yaml                    One-file Render deploy blueprint
 server/
-  index.js         Express app + routes
-  wikitree.js      WikiTree API client (server-side, no CORS issue)
-  wikidata.js      Wikidata client (no auth; descriptive User-Agent)
-  openarchives.js  Open Archives client (no auth)
-  europeana.js     Europeana client (optional free API key; UK/DE/EU records)
-  agent/
-    scoring.js     Deterministic match-confidence scoring (self-tested)
-    engine.js      Tree state, expansion loop, questions
-    gedcom.js      GEDCOM 5.5.1 export (self-tested)
+  index.js                     Express app + routes (/api/sources, /api/search)
+  scoring.js                   Deterministic record-relevance scoring (self-tested)
+  sources/
+    index.js                   Source registry
+    openarchives.js            Open Archives client (no auth)
+    chroniclingamerica.js      Library of Congress newspapers (no auth)
+    internetarchive.js         Internet Archive texts (no auth)
 public/
-  index.html       Single-page UI
-  styles.css       "Case-file" visual system
-  app.js           Frontend logic (talks only to your backend)
+  index.html                   Single-page search UI
+  styles.css                   "Case-file" visual system
+  app.js                       Frontend logic (talks only to your backend)
 ```
 
 ## A note on data & privacy
 
-WikiTree only returns **public** profiles through the API unless an authenticated
-member is on a profile's trusted list. Wikidata is openly licensed (CC0). This
-tool keeps state in a server session and doesn't persist record data to disk.
+Every source is public and openly searchable. Kinfold holds **no per-user state** —
+no login, no session, no database — and never persists record data to disk; results
+live only in your browser until you export them.

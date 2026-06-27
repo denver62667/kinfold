@@ -1,95 +1,98 @@
 # CLAUDE.md — project context for Claude Code
 
-Kinfold is a cross-source genealogy app: it takes a person and combines **WikiTree**,
-**Wikidata**, and **Open Archives** to reconcile facts, search records, and
-auto-build a family tree, exporting to GEDCOM. This file orients you (Claude Code)
-before you make changes.
+Kinfold is a **document-first genealogy search**. The premise: you already know who
+you're looking for. Kinfold takes a name (plus optional place / year range) and fans
+out across free, no-login archives of **documents and references about people** —
+newspapers, vital records, and digitized histories — surfacing material that might
+tell you something *new*. It deliberately is **not** a lineage/tree database like
+WikiTree or FamilySearch; it competes with them from the document side. This file
+orients you (Claude Code) before you make changes.
 
 ## Run / test
 
 - Start: `npm start` → http://localhost:3000  (Node 18+, ESM, `"type":"module"`)
-- Install deps: `npm install`
+- Install deps: `npm install` (only `express` + `dotenv`)
 - Syntax-check after edits: `node --check <file>` for every JS file you touch.
 - This repo has **no test runner**; verify logic with throwaway ESM scripts
   (`node ./_tmp.mjs`) that import a module and assert on output, then delete them.
-  See the pattern used for `server/agent/scoring.js` and `server/agent/gedcom.js`.
-- There is no network in some sandboxes; pure functions (scoring, gedcom, date
-  parsing) must be testable without network. Keep them pure.
+  Use this for `server/scoring.js` and each source's exported `flatten()` mapper.
+- **Network matters:** some sandboxes block all outbound HTTP (the source clients then
+  return per-source errors — which is the designed behavior). Keep all parsing and
+  scoring **pure** so they're testable against fixture JSON without network.
 
 ## Architecture
 
 ```
 server/
-  index.js         Express app + all routes; sessions via express-session
-  wikitree.js      WikiTree client (server-side; the API blocks browser CORS)
-  wikidata.js      Wikidata client (no auth; descriptive User-Agent required)
-  openarchives.js  Open Archives client (no auth)
-  europeana.js     Europeana client (optional free API key; UK/DE/EU records)
-  agent/
-    scoring.js     Deterministic match-confidence scoring (pure, self-tested)
-    engine.js      Tree state, BFS expansion loop, questions, source matching
-    gedcom.js      GEDCOM 5.5.1 export (pure, self-tested)
+  index.js              Express app. Two routes: /api/sources and /api/search.
+  scoring.js            Deterministic record-relevance scoring (pure, self-tested).
+  sources/
+    index.js            Source registry — the single place sources are declared.
+    openarchives.js     Open Archives client (NL/BE/FR vital records; no auth).
+    chroniclingamerica.js  Library of Congress historic newspapers (no auth).
+    internetarchive.js  archive.org digitized texts/genealogies (no auth).
 public/
-  index.html       Single page: tabs = Cross-reference / Record search / Auto-build
-  styles.css       "Case-file" visual system; CSS variables at :root
-  app.js           Frontend; talks ONLY to our backend, never directly to APIs
+  index.html       Single search view (name-led form + source toggles + results).
+  styles.css       "Case-file" visual system; CSS variables at :root.
+  app.js           Frontend; talks ONLY to our backend, never directly to archives.
 ```
 
-Why a backend at all: WikiTree blocks cross-origin browser calls and Wikidata
-requires a descriptive server-side User-Agent, so every external API is proxied
-server-side.
+Why a backend at all: archives ask for a descriptive server-side User-Agent and the
+browser would otherwise hit CORS/rate-limit walls, so every external API is proxied
+server-side. `GET /api/search` fans out to the chosen sources **in parallel**, scores
+every returned record for relevance, and returns results **grouped per source** with
+isolated error reporting (one failing source can't break the response).
 
 ## Conventions (follow these)
 
 - **ESM only**, Node global `fetch` (no node-fetch). Dependencies are intentionally
-  minimal: express, express-session, dotenv. Don't add libraries without reason.
-- **Every data source exposes the same flattened person shape** so the rest of the
-  app stays source-agnostic:
-  `{ name, firstName, lastName, gender, birthDate, deathDate, birthPlace, deathPlace, url }`
-  (records add `eventType/eventDate/eventPlace/sourceType/archive`). When adding a
-  source, mirror `wikidata.js` / `openarchives.js`.
-- **Matching is deterministic, never an LLM.** `scoring.js` returns a 0..1 score +
-  tier (high/medium/low) + breakdown. The agent auto-merges only `high` and never
-  auto-merges a name-only match — preserve these safeguards. Wrong merges corrupt
-  the tree, so precision beats recall.
-- **The agent asks rather than guesses.** Medium/conflicting matches become
-  questions (`engine.js` → `askConfirmMatch`), answered via `/api/agent/answer`.
-- **Sources are additive and gated.** Open Archives is corroboration only (it never
-  merges identity or expands relationships). Each source has a cfg flag
-  (`useOpenArchives`, etc.) and is wrapped in try/catch so one failing source can't
-  break a run.
-- **Honesty about uncertainty.** Surface confidence in the UI and in GEDCOM notes;
-  don't present a guess as a fact.
-- **Formatting:** keep prose in the UI minimal; the visual system lives in
-  `styles.css` via CSS variables — reuse them, don't hardcode new colors except a
-  single per-source accent.
+  minimal: `express`, `dotenv`. Don't add libraries without reason.
+- **Every source exposes the same contract**, so the rest of the app stays
+  source-agnostic. A source module exports:
+  `searchRecords({ name, place, fromYear, toYear, start, count }) → { total, results }`
+  and each result is the flattened record shape:
+  `{ name, role, eventType, eventDate, eventPlace, sourceType, archive, snippet, url }`
+  (`snippet` is an OCR/description excerpt for document sources). To add a source:
+  write the module, then register it in `server/sources/index.js` with
+  `{ id, label, accent, region, description, search }`. Mirror an existing source.
+- **No API keys.** Every source is free and no-auth. If a future source needs a key,
+  gate it so the app still runs without it (and hide it in `/api/sources`).
+- **Scoring ranks, it never asserts.** `scoring.js → scoreRecord(query, rec)` returns a
+  0..1 relevance used only to order/surface records. A record is **evidence for the
+  user to weigh**, not a verified fact and never an identity merge. Be honest about
+  uncertainty in the UI ("X% match", "evidence to weigh").
+- **Sources are additive and isolated.** Each source call in `/api/search` is wrapped
+  in try/catch; a failure returns `{ error }` for that group only.
+- **Formatting:** keep UI prose minimal; the visual system lives in `styles.css` via
+  CSS variables — reuse them. Each source gets exactly one accent color.
 
-## Source colors (UI)
+## Source accents (UI)
 
-WikiTree = slate `--wikitree`; Open Archives = teal `--records`;
-Wikidata = plum `--wikidata`; Europeana = burnt orange `--europeana`.
-New sources get one new accent color.
+Open Archives = teal `--records`; Chronicling America = burnt sienna `--news`;
+Internet Archive = slate blue `--texts`. A new source gets one new accent; wire it via
+the `accent` field in the registry and an `.acc-<name>` / `.record-card.acc-<name>`
+block in `styles.css`.
 
 ## Routes (server/index.js)
 
-- WikiTree: `/api/wikitree/search|profile/:key|ancestors/:key`
-- Cross-reference: `POST /api/crossref` (one person → reconciled vs best Wikidata match + Open Archives/Europeana records; powers the dossier so a search isn't WikiTree-only). Reconciliation logic in `crossref.js` (pure, self-tested).
-- Open Archives: `/api/openarchives/search`
-- Europeana: `/api/europeana/search` (key-gated); `/api/sources` reports which optional sources are on
-- Agent: `/api/agent/start|continue|answer|tree|gedcom`
+- `GET /api/sources` → `{ sources: [{ id, label, accent, region, description }] }`
+  (the UI builds its source toggles from this).
+- `GET /api/search?given=&surname=&name=&place=&from=&to=&sources=&count=&start=`
+  → `{ query, groups: [{ source, label, accent, total, results[], error? }] }`.
+  `sources` is a CSV of ids (default: all). Results are scored and sorted desc.
 
 ## Deploy
 
-See `DEPLOY.md`. Sessions are in-memory (lost on restart); agent trees live in
-server memory keyed by `session.treeId`. Production sets `NODE_ENV=production`
-(secure cookies + proxy trust).
+See `DEPLOY.md`. The app is **stateless** — no sessions, no database, no per-user
+server state — so it scales trivially and restarts cleanly. Production sets
+`NODE_ENV=production` (trusts the platform proxy).
 
 ## Sources
 
-WikiTree is the structural skeleton; **Wikidata** is the no-auth cross-source
-matcher (deterministic scoring, auto-merge only on high confidence); **Open
-Archives** is corroboration only. Those three need no API key. **Europeana** is an
-optional Records-tab source for UK/Scotland/Germany/EU archives, gated behind a
-free `EUROPEANA_API_KEY` (and `/api/sources`); when no key is set it stays hidden
-and nothing else changes. It mirrors the `openarchives.js` flattened record shape,
-so the UI and scoring stay source-agnostic.
+All three are free and need no key. **Open Archives** (openarch.nl) — NL/BE/FR vital
+records (births, baptisms, marriages, deaths), the primary documents. **Chronicling
+America** (Library of Congress) — full-text historic US newspapers, where a name
+search turns up notices, obituaries, and mentions. **Internet Archive** (archive.org)
+— digitized published genealogies, family/local histories, and biographical works
+that *reference* people. The source layer is pluggable; add more name-searchable
+document sources the same way.
