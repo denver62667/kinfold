@@ -3,8 +3,8 @@
 This walks through everything from zero. No prior Node.js experience assumed.
 Plan for ~5 minutes.
 
-Kinfold needs **no API keys**. WikiTree (public profiles), Wikidata, and Open
-Archives all work without registration.
+Kinfold needs **no API keys and no accounts**. Open Archives, Chronicling America,
+and the Internet Archive are all free and anonymous.
 
 ---
 
@@ -20,22 +20,20 @@ Kinfold needs Node.js version 18 or newer.
    node --version
    ```
 
-   You should see something like `v20.x.x`. If the number is 18 or higher,
-   you're set. If the command isn't found, close and reopen the terminal, or
-   restart your computer so the install registers.
+   You should see something like `v20.x.x`. If the number is 18 or higher, you're
+   set. If the command isn't found, close and reopen the terminal, or restart your
+   computer so the install registers.
 
 ---
 
 ## Step 2 — Get the project onto your computer
 
-If you downloaded the project as a folder already, just note where it is
-(e.g. `Downloads/genealogy-crossref`).
-
-If it's in a Git repository:
+If you already have the project folder, just note where it is. If it's in a Git
+repository:
 
 ```bash
 git clone <your-repo-url>
-cd genealogy-crossref
+cd kinfold
 ```
 
 Either way, open a terminal **in the project folder** — the one containing
@@ -51,22 +49,22 @@ You should see `package.json`, `server`, `public`, and `README.md`.
 
 ## Step 3 — Install the project's dependencies
 
-This downloads the few libraries Kinfold uses (Express, etc.) into a local
+This downloads the two libraries Kinfold uses (Express, dotenv) into a local
 `node_modules` folder. Run:
 
 ```bash
 npm install
 ```
 
-It prints a summary when done. A `node_modules` folder now exists — you never
-edit it, and it's already excluded from Git.
+It prints a summary when done. A `node_modules` folder now exists — you never edit
+it, and it's already excluded from Git.
 
 ---
 
 ## Step 4 — (Optional) Create your settings file
 
-Kinfold runs with sensible defaults, so this step is optional. To customize the
-port or set a session secret, copy the template `.env.example` to `.env`:
+Kinfold runs with sensible defaults, so this step is optional. To customize the port,
+copy the template `.env.example` to `.env`:
 
 macOS / Linux:
 
@@ -80,13 +78,8 @@ Windows (PowerShell):
 Copy-Item .env.example .env
 ```
 
-Open `.env` in any text editor. The only thing worth setting is:
-
-```
-SESSION_SECRET=paste-some-long-random-text-here
-```
-
-Type any long random string. Everything else can stay as-is.
+The only setting worth changing is `PORT` (default 3000). There are no keys or
+secrets to fill in.
 
 ---
 
@@ -99,13 +92,11 @@ npm start
 You'll see `Kinfold running at http://localhost:3000`. Open that address in your
 browser.
 
-- **Cross-reference** tab: search a name like **Samuel / Clemens**, open a match,
-  and read the dossier (vitals, bio, relatives).
-- **Auto-build** tab: enter a WikiTree ID (or use "Build tree from here" on a
-  dossier) to climb the tree and match each person against Wikidata. High-
-  confidence matches merge automatically; uncertain ones become questions.
-- **Record search** tab: search Open Archives for free Dutch/Belgian/French
-  historical records.
+1. Enter a name — at least a surname (try **Samuel / Clemens**). Optionally add a
+   place and a year range.
+2. Tick the sources you want and press **Search archives**.
+3. Browse the findings grouped by source, follow **View source** to the original
+   document, and use **Export CSV** to save your research log.
 
 Press `Ctrl+C` in the terminal to stop the server.
 
@@ -119,13 +110,13 @@ install. Reopen the terminal or restart, then retry Step 1's version check.
 **`npm start` says a port is in use** — Something else is on port 3000. Set a
 different one in `.env`, e.g. `PORT=4000`, and use that address.
 
-**WikiTree returns nothing for a real person** — Only *public* profiles are
-visible through the API. Try fewer fields, or a different spelling of the surname.
+**A source shows "unavailable"** — Each search calls live archive APIs. If one is
+down or rate-limiting, only that source's group reports the error; the others still
+return results. Try again in a moment.
 
-**Wikidata finds no match for an ordinary ancestor** — Wikidata skews toward
-notable people, so everyday ancestors often won't be there. That's expected, not
-a bug — the agent simply leaves those as WikiTree-only.
+**No matches at all** — Widen your search: just a surname, drop the place, or expand
+the year range. Some sources are regional (Open Archives is NL/BE/FR; Chronicling
+America is US newspapers), so a person may only appear in one of them.
 
-**A Wikidata lookup fails intermittently** — Wikimedia rate-limits aggressive
-clients. Kinfold makes calls sequentially and sets a descriptive User-Agent; if
-you see occasional failures in the log, they're retried on the next run.
+**A common name returns noise** — Add a place and a tight year range; both feed the
+relevance score and push the most likely records to the top of each source.

@@ -6,13 +6,18 @@
   --ink: #20272b;
   --ink-soft: #5b5d54;
   --rule: #c3bca9;
-  --wikitree: #2f4858;   /* slate ink */
-  --records: #2f6b63;    /* teal — Open Archives records */
-  --wikidata: #6b4a8a;   /* plum — Wikidata cross-source */
-  --europeana: #b0662c;  /* burnt orange — Europeana (UK/DE/EU records) */
-  --match: #3c6e5a;      /* verdigris */
-  --conflict: #9a3b22;   /* oxblood */
-  --single: #8a7d4f;     /* one-source amber */
+
+  /* one accent per document source (see server/sources/index.js → accent) */
+  --records: #2f6b63;   /* teal — Open Archives vital records */
+  --news: #9a4b2c;      /* burnt sienna — Chronicling America newspapers */
+  --texts: #45557f;     /* slate blue — Internet Archive digitized texts */
+  --loc: #6b4a8a;       /* plum — Library of Congress */
+  --tna: #355070;       /* navy — National Archives UK */
+  --dpla: #4a7a3a;      /* olive — DPLA */
+  --trove: #9a3b5a;     /* berry — Trove */
+  --dri: #a07a1f;       /* gold — Digital Repository of Ireland */
+
+  --conflict: #9a3b22;  /* oxblood — errors/notes */
 
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Spectral", Georgia, serif;
@@ -23,7 +28,6 @@
   /* warm, paper-tinted depth — cards read as documents on a desk */
   --shadow-sm: 0 1px 2px rgba(74, 62, 38, 0.07), 0 2px 5px rgba(74, 62, 38, 0.05);
   --shadow-md: 0 2px 4px rgba(74, 62, 38, 0.09), 0 7px 18px rgba(74, 62, 38, 0.09);
-  --shadow-lift: 0 5px 10px rgba(74, 62, 38, 0.11), 0 16px 34px rgba(74, 62, 38, 0.13);
   --ease: cubic-bezier(0.2, 0.6, 0.25, 1);
 }
 
@@ -32,7 +36,6 @@
 body {
   margin: 0;
   background-color: var(--paper);
-  /* faint ledger lines */
   background-image: repeating-linear-gradient(
     to bottom, transparent, transparent 31px, rgba(120, 110, 80, 0.06) 32px);
   color: var(--ink);
@@ -50,7 +53,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
   position: sticky; top: 0; z-index: 10; box-shadow: var(--shadow-sm);
 }
 .masthead-inner {
-  max-width: var(--maxw); margin: 0 auto; padding: 22px 20px 16px;
+  max-width: var(--maxw); margin: 0 auto; padding: 22px 20px 18px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
 }
 .eyebrow {
@@ -64,10 +67,11 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
 
 /* ---------- search ---------- */
 .search { padding: 28px 0 8px; }
+.lede { font-size: 16px; color: var(--ink-soft); max-width: 64ch; margin: 0 0 22px; }
 #searchForm { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .field { display: flex; flex-direction: column; gap: 5px; }
-.field-grow { flex: 1 1 160px; }
-.field-year { flex: 0 0 90px; }
+.field-grow { flex: 1 1 150px; }
+.field-year { flex: 0 0 80px; }
 .field label {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--ink-soft);
@@ -77,17 +81,12 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
   background: var(--panel); border: 1px solid var(--panel-edge);
   border-bottom: 2px solid var(--ink); border-radius: 2px 2px 0 0;
   padding: 9px 11px; transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
-}
-.field select {
-  font-family: var(--font-body); font-size: 17px; color: var(--ink);
-  background: var(--panel); border: 1px solid var(--panel-edge);
-  border-bottom: 2px solid var(--ink); border-radius: 2px 2px 0 0;
-  padding: 9px 11px; cursor: pointer;
+  width: 100%;
 }
 .field input::placeholder { color: var(--rule); }
 .field input:focus {
-  outline: none; border-color: var(--wikitree); border-bottom-color: var(--wikitree);
-  box-shadow: 0 0 0 3px rgba(47, 72, 88, 0.14);
+  outline: none; border-color: var(--records); border-bottom-color: var(--records);
+  box-shadow: 0 0 0 3px rgba(47, 107, 99, 0.16);
 }
 
 .btn-primary {
@@ -96,331 +95,154 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 80px; }
   padding: 11px 18px; cursor: pointer; box-shadow: var(--shadow-sm);
   transition: transform 0.1s var(--ease), background 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
-.btn-primary:hover { background: var(--wikitree); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.btn-primary:hover { background: var(--records); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .btn-primary:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
-.hint { font-style: italic; color: var(--ink-soft); font-size: 14px; margin: 12px 2px 0; }
 
-/* ---------- section labels ---------- */
+.btn-ghost {
+  font-family: var(--font-mono); font-size: 12px; background: transparent;
+  color: var(--ink); border: 1px solid var(--ink); border-radius: 2px;
+  padding: 7px 13px; cursor: pointer;
+  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+}
+.btn-ghost:hover { background: var(--ink); color: var(--paper); }
+
+/* ---------- source toggles ---------- */
+.sources { border: none; margin: 22px 0 0; padding: 0; }
+.sources legend {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-soft); padding: 0; margin-bottom: 10px;
+}
+.source-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.source-toggle {
+  display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  border-left: 4px solid var(--src, var(--records)); border-radius: 2px; padding: 11px 13px;
+  box-shadow: var(--shadow-sm); transition: box-shadow 0.15s var(--ease), transform 0.12s var(--ease);
+}
+.source-toggle:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.source-toggle input { margin-top: 4px; accent-color: var(--ink); }
+.source-toggle:has(input:not(:checked)) { opacity: 0.55; }
+.st-body { display: flex; flex-direction: column; gap: 3px; }
+.st-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.st-region { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.st-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.35; }
+
+/* ---------- results ---------- */
+.results { animation: rise 0.2s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.results-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.results-actions { display: flex; align-items: center; gap: 12px; }
+
+/* segmented Best matches / By source toggle */
+.view-toggle { display: inline-flex; border: 1px solid var(--panel-edge); border-radius: 3px; overflow: hidden; background: var(--panel); }
+.vt-btn {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+  background: transparent; color: var(--ink-soft); border: none; cursor: pointer;
+  padding: 7px 12px; transition: background 0.12s var(--ease), color 0.12s var(--ease);
+}
+.vt-btn + .vt-btn { border-left: 1px solid var(--panel-edge); }
+.vt-btn:hover { color: var(--ink); }
+.vt-btn.is-active { background: var(--ink); color: var(--paper); }
+
+/* relevance threshold slider */
+.threshold { display: inline-flex; align-items: center; gap: 8px; }
+.th-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+.th-label b { color: var(--ink); }
+.threshold input[type="range"] { width: 110px; accent-color: var(--records); cursor: pointer; }
 .section-label {
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--ink); margin: 34px 0 14px;
   padding-bottom: 8px; border-bottom: 1px solid var(--rule);
-  display: flex; align-items: baseline; gap: 10px;
+  display: flex; align-items: baseline; gap: 10px; flex: 1 1 auto;
 }
 .count { color: var(--ink-soft); font-size: 11px; }
 
-/* ---------- match cards (index cards) ---------- */
-.match-list { display: grid; gap: 10px; }
-.match-card {
+.group { margin-bottom: 26px; }
+.group-head {
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--rule);
+}
+.group-name {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--src, var(--records));
+}
+.group-note { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
+.err-note { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); }
+
+/* best-matches list: one ranked column across all sources */
+.best-list { display: flex; flex-direction: column; }
+.rc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rc-source {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--paper); background: var(--src, var(--records)); padding: 2px 7px; border-radius: 100px;
+  white-space: nowrap; flex: none;
+}
+
+/* clustered duplicates: "also found in N other records" expander */
+.rc-dupes { margin-top: 10px; border-top: 1px dotted var(--rule); padding-top: 8px; }
+.rc-dupes summary {
+  font-family: var(--font-mono); font-size: 11px; color: var(--src, var(--records));
+  cursor: pointer; list-style: none;
+}
+.rc-dupes summary::-webkit-details-marker { display: none; }
+.rc-dupes summary::before { content: "▸ "; }
+.rc-dupes[open] summary::before { content: "▾ "; }
+.rc-dupes ul { list-style: none; margin: 8px 0 2px; padding: 0; }
+.rc-dupes li { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); padding: 3px 0; }
+.rc-dupes a { color: var(--src, var(--records)); text-decoration: none; border-bottom: 1px dotted var(--src, var(--records)); }
+
+/* ---------- record cards ---------- */
+.record-card {
   background: var(--panel); border: 1px solid var(--panel-edge);
-  border-left: 4px solid var(--wikitree); border-radius: 2px;
-  padding: 13px 16px; cursor: pointer; text-align: left; width: 100%;
-  font-family: var(--font-body); color: var(--ink); box-shadow: var(--shadow-sm);
-  display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
-  transition: transform 0.12s var(--ease), box-shadow 0.15s var(--ease), border-left-width 0.12s var(--ease);
+  border-left: 4px solid var(--src, var(--records)); border-radius: 2px;
+  padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow-sm);
+  transition: transform 0.12s var(--ease), box-shadow 0.15s var(--ease);
 }
-.match-card:hover {
-  transform: translateX(3px); border-left-width: 6px; box-shadow: var(--shadow-md);
+.record-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.rc-collection {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--src, var(--records)); display: block; margin-bottom: 5px;
 }
-.match-card .mc-name { font-family: var(--font-display); font-weight: 600; font-size: 20px; }
-.match-card .mc-meta { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
-.match-card .mc-id { font-family: var(--font-mono); font-size: 10px; color: var(--wikitree); }
-
-/* ---------- dossier ---------- */
-.dossier { margin-top: 8px; animation: rise 0.25s ease both; }
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-.dossier-head { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); padding: 18px 0 14px; margin-top: 24px; }
-.dossier-head .eyebrow2 { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
-.dossier-head h2 { font-family: var(--font-display); font-weight: 800; font-size: 34px; margin: 4px 0 6px; letter-spacing: -0.01em; }
-.dossier-head .vitals { font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); }
-.dossier-head a { color: var(--wikitree); }
-
-/* ---------- relatives + bio ---------- */
-.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 30px; }
-.panel h3 { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); border-bottom: 1px solid var(--rule); padding-bottom: 7px; }
-.rel-group { margin-bottom: 12px; }
-.rel-group .rg-label { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; }
-.rel-group ul { list-style: none; margin: 4px 0 0; padding: 0; }
-.rel-group li { padding: 2px 0; }
-.rel-group a { color: var(--wikitree); text-decoration: none; border-bottom: 1px dotted var(--wikitree); }
-.bio { font-size: 15px; max-height: 320px; overflow: auto; padding-right: 8px; }
-.bio :is(h1,h2,h3) { font-family: var(--font-display); font-size: 18px; }
-
-/* ---------- cross-source reconciliation (in the dossier) ---------- */
-.cross-source { margin-top: 30px; padding-top: 8px; border-top: 1px solid var(--rule); }
-.cs-label {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--ink); margin: 14px 0 12px;
+.rc-name { font-family: var(--font-display); font-weight: 600; font-size: 20px; }
+.rc-vitals { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+.rc-related { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+  background: var(--paper); border: 1px solid var(--panel-edge); border-radius: 2px; padding: 2px 7px;
 }
-.cs-srcline { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 8px; }
-.cs-srcname { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
-.cs-score { font-family: var(--font-mono); font-size: 12px; color: var(--match); }
-.cs-score.bad { color: var(--conflict); }
-.cs-link { font-family: var(--font-mono); font-size: 11px; color: var(--wikidata); text-decoration: none; border-bottom: 1px dotted var(--wikidata); }
-
-.cs-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.cs-table th {
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--ink-soft); text-align: left;
-  padding: 4px 10px; border-bottom: 1px solid var(--rule);
+.tag b { color: var(--ink); font-weight: 700; }
+.rc-snippet {
+  font-size: 15px; color: var(--ink); margin: 10px 0 0; padding-left: 11px;
+  border-left: 2px solid var(--rule); font-style: italic;
 }
-.cs-table td { padding: 7px 10px; border-bottom: 1px solid var(--panel-edge); vertical-align: top; }
-.cs-table .cs-fact { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
-/* status accents: a left bar on the fact label, color-coded */
-.cs-table tr td:first-child { border-left: 3px solid transparent; }
-.cs-match    td:first-child { border-left-color: var(--match); }
-.cs-conflict td:first-child { border-left-color: var(--conflict); }
-.cs-conflict td { background: rgba(154, 59, 34, 0.06); }
-.cs-wikitree-only td:first-child { border-left-color: var(--wikitree); }
-.cs-wikidata-only td:first-child { border-left-color: var(--wikidata); }
-.cs-none td { color: var(--rule); }
+.rc-foot { margin-top: 11px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rc-foot a { font-family: var(--font-mono); font-size: 12px; color: var(--src, var(--records)); text-decoration: none; border-bottom: 1px dotted var(--src, var(--records)); }
+.rc-score { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
 
-.cs-empty { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); padding: 10px 0; display: flex; align-items: center; gap: 8px; }
+/* ---------- per-source accents (acc-<accent> from the registry) ----------
+   Each source just maps its accent name to a color; the component rules above
+   read --src. Adding a source = one color in :root + one line here. */
+.acc-records { --src: var(--records); }
+.acc-news    { --src: var(--news); }
+.acc-texts   { --src: var(--texts); }
+.acc-loc     { --src: var(--loc); }
+.acc-tna     { --src: var(--tna); }
+.acc-dpla    { --src: var(--dpla); }
+.acc-trove   { --src: var(--trove); }
+.acc-dri     { --src: var(--dri); }
 
-.cs-records { margin-top: 18px; }
-.cs-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
-.cs-rec {
-  display: flex; align-items: center; gap: 10px; padding: 9px 11px; margin-bottom: 6px;
-  background: var(--panel); border: 1px solid var(--panel-edge);
-  border-left: 4px solid var(--records); border-radius: 2px;
-}
-.cs-rec.prov-europeana { border-left-color: var(--europeana); }
-.cs-rec-body { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
-.cs-rec-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
-.cs-rec-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
-.cs-rec-score { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
-
-/* ---------- messages ---------- */
+/* ---------- messages / misc ---------- */
 .message { margin-top: 20px; padding: 13px 16px; border-left: 3px solid var(--conflict); background: var(--panel); font-size: 15px; }
-
-.colophon { max-width: var(--maxw); margin: 0 auto; padding: 24px 20px 40px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); border-top: 1px solid var(--rule); }
-
 .loading { font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); padding: 16px 0; }
+.colophon { max-width: var(--maxw); margin: 0 auto; padding: 24px 20px 40px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); border-top: 1px solid var(--rule); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 620px) {
   .wordmark h1 { font-size: 34px; }
-  .dossier-head h2 { font-size: 27px; }
-  .panels { grid-template-columns: 1fr; }
-  /* let the date/place wrap instead of forcing the card wider */
-  .match-card .mc-meta { white-space: normal; }
-  /* reclaim side space on phones */
   main { padding-left: 16px; padding-right: 16px; }
-  .masthead-inner, .tabs, .colophon { padding-left: 16px; padding-right: 16px; }
+  .masthead-inner, .colophon { padding-left: 16px; padding-right: 16px; }
+  .source-list { grid-template-columns: 1fr; }
 }
-
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
-
-/* ---------- tabs ---------- */
-.tabs {
-  max-width: var(--maxw); margin: 0 auto; padding: 0 20px;
-  display: flex; gap: 4px;
-}
-.tab {
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em;
-  text-transform: uppercase; background: transparent; border: none;
-  color: var(--ink-soft); cursor: pointer; padding: 12px 16px 13px;
-  border-bottom: 2px solid transparent; margin-bottom: -2px;
-}
-.tab:hover { color: var(--ink); }
-.tab.is-active { color: var(--ink); border-bottom-color: var(--ink); }
-.view { animation: rise 0.2s ease both; }
-
-/* records search button */
-.btn-records {
-  font-family: var(--font-mono); font-size: 13px; background: var(--records);
-  color: var(--paper); border: none; border-radius: 2px; padding: 11px 18px;
-  cursor: pointer; box-shadow: var(--shadow-sm);
-  transition: transform 0.1s var(--ease), filter 0.15s var(--ease), box-shadow 0.15s var(--ease);
-}
-.btn-records:hover { filter: brightness(1.08); box-shadow: var(--shadow-md); transform: translateY(-1px); }
-.btn-records:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
-.btn-records-submit { align-self: flex-end; }
-
-/* records form: let the fields wrap into a tidy grid */
-#recordsForm { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
-
-/* ---------- record cards ---------- */
-.record-list { display: grid; gap: 10px; }
-.record-card {
-  background: var(--panel); border: 1px solid var(--panel-edge);
-  border-left: 4px solid var(--records); border-radius: 2px;
-  padding: 14px 16px; box-shadow: var(--shadow-sm);
-  transition: transform 0.12s var(--ease), box-shadow 0.15s var(--ease);
-}
-.record-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.record-card .rc-collection {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--records);
-  display: block; margin-bottom: 5px;
-}
-.record-card .rc-name { font-family: var(--font-display); font-weight: 600; font-size: 21px; }
-.record-card .rc-vitals { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
-.record-card .rc-related { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
-.record-card .tag {
-  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
-  background: var(--paper); border: 1px solid var(--panel-edge);
-  border-radius: 2px; padding: 2px 7px;
-}
-.record-card .tag b { color: var(--ink); font-weight: 700; }
-.record-card .rc-foot { margin-top: 11px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.record-card .rc-foot a { font-family: var(--font-mono); font-size: 12px; color: var(--records); text-decoration: none; border-bottom: 1px dotted var(--records); }
-.record-card .rc-score { font-family: var(--font-mono); font-size: 10px; color: var(--rule); }
-
-/* per-source accent: Open Archives keeps the teal default; Europeana is burnt orange */
-.record-card.prov-europeana { border-left-color: var(--europeana); }
-.record-card.prov-europeana .rc-collection { color: var(--europeana); }
-.record-card.prov-europeana .rc-foot a { color: var(--europeana); border-bottom: 1px dotted var(--europeana); }
-
-/* a "find records" handoff button in the dossier head */
-.btn-handoff {
-  font-family: var(--font-mono); font-size: 11px; background: transparent;
-  color: var(--records); border: 1px solid var(--records);
-  border-radius: 2px; padding: 5px 10px; cursor: pointer; margin-top: 10px;
-}
-.btn-handoff:hover { background: var(--records); color: var(--paper); }
-
-/* ---------- records pager ---------- */
-.pager {
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rule);
-}
-.pager-btn {
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em;
-  background: var(--paper); color: var(--ink); border: 1px solid var(--ink);
-  border-radius: 2px; padding: 8px 14px; cursor: pointer;
-}
-.pager-btn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
-.pager-btn:disabled { color: var(--rule); border-color: var(--rule); cursor: default; }
-.pager-label { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); min-width: 120px; text-align: center; }
-
-/* ===================== AUTO-BUILD (AGENT) ===================== */
-.agent-head { padding: 24px 0 8px; }
-.agent-intro { font-size: 15px; color: var(--ink-soft); max-width: 60ch; margin: 0 0 16px; }
-.agent-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
-.agent-controls select {
-  font-family: var(--font-body); font-size: 17px; color: var(--ink);
-  background: var(--panel); border: 1px solid var(--panel-edge);
-  border-bottom: 2px solid var(--ink); border-radius: 2px 2px 0 0; padding: 9px 11px;
-}
-/* status bar */
-.agent-status {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  gap: 14px; margin-top: 24px; padding: 16px 18px;
-  background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 3px;
-  box-shadow: var(--shadow-md);
-}
-.as-stats { display: flex; flex-wrap: wrap; gap: 22px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); }
-.as-stats span { display: inline-flex; align-items: baseline; gap: 6px; }
-.as-stats b { color: var(--ink); font-size: 18px; }
-.as-actions { display: flex; align-items: center; gap: 14px; }
-.as-state {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
-  text-transform: uppercase; padding: 4px 10px; border-radius: 100px;
-  display: inline-flex; align-items: center; gap: 6px;
-}
-.as-state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.as-running { background: rgba(138, 125, 79, 0.16); color: var(--single); }
-.as-waiting { background: rgba(154, 59, 34, 0.14); color: var(--conflict); }
-.as-done { background: rgba(60, 110, 90, 0.16); color: var(--match); }
-
-/* questions */
-.agent-questions { margin-top: 8px; }
-.q-card {
-  background: var(--panel); border: 1px solid var(--panel-edge);
-  border-top: 3px solid var(--conflict); border-radius: 2px;
-  padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-md);
-}
-.q-prompt { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin-bottom: 12px; }
-.q-flag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper); background: var(--conflict); padding: 2px 6px; border-radius: 2px; vertical-align: middle; }
-.q-compare { display: grid; grid-template-columns: 1fr 72px 1fr; gap: 0; align-items: stretch; }
-.q-side { padding: 10px 14px; }
-.q-wt { text-align: right; border-right: 2px solid var(--wikitree); }
-.q-cand { border-left: 2px solid var(--wikidata); }
-.q-src { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
-.q-wt .q-src { color: var(--wikitree); }
-.q-cand .q-src { color: var(--wikidata); }
-.q-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-top: 2px; }
-.q-meta { font-size: 14px; color: var(--ink-soft); }
-.q-link { font-family: var(--font-mono); font-size: 11px; color: var(--wikidata); }
-.q-mid { display: flex; align-items: center; justify-content: center; }
-.q-score { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--ink); }
-.q-runner { font-size: 13px; font-style: italic; color: var(--ink-soft); margin-top: 10px; }
-.q-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.q-opt {
-  font-family: var(--font-mono); font-size: 12px; cursor: pointer;
-  background: var(--paper); color: var(--ink); border: 1px solid var(--ink);
-  border-radius: 2px; padding: 8px 13px;
-  transition: background 0.12s var(--ease), color 0.12s var(--ease), transform 0.1s var(--ease), box-shadow 0.12s var(--ease);
-}
-.q-opt:hover { background: var(--ink); color: var(--paper); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.q-opt:active { transform: translateY(0); }
-
-/* tree */
-.agent-tree { margin-top: 12px; }
-.gen-group { margin-bottom: 18px; }
-.gen-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding-bottom: 6px; margin-bottom: 10px; }
-.person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-.person-chip {
-  background: var(--panel); border: 1px solid var(--panel-edge);
-  border-left: 4px solid var(--rule); border-radius: 2px; padding: 11px 13px;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.12s var(--ease), box-shadow 0.15s var(--ease);
-}
-.person-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
-.person-chip.pc-matched { border-left-color: var(--match); }
-.person-chip.pc-review { border-left-color: var(--single); }
-.person-chip.is-root {
-  border-left-color: var(--ink); border-left-width: 4px;
-  background: linear-gradient(var(--panel), var(--panel)) padding-box,
-    linear-gradient(180deg, rgba(47,72,88,0.5), rgba(47,72,88,0.15)) border-box;
-  border: 1px solid transparent; border-left: 4px solid var(--ink);
-  box-shadow: var(--shadow-md);
-}
-.person-chip.is-root::before {
-  content: "anchor"; float: right; font-family: var(--font-mono); font-size: 8px;
-  letter-spacing: 0.16em; text-transform: uppercase; color: var(--paper);
-  background: var(--ink); padding: 2px 6px; border-radius: 100px; margin: -2px -3px 0 0;
-}
-.pc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.pc-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--ink); text-decoration: none; }
-a.pc-name:hover { text-decoration: underline; }
-.pc-rel { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
-.pc-years { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
-.pc-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; }
-.pc-src { display: flex; gap: 4px; }
-.src { font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 5px; border-radius: 3px; color: var(--paper); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.15); }
-.src-wikitree { background: var(--wikitree); }
-.pc-score { font-family: var(--font-mono); font-size: 10px; color: var(--single); }
-.pc-score.ok { color: var(--match); }
-
-@media (max-width: 620px) {
-  .person-grid { grid-template-columns: 1fr; }
-
-  /* Stack the source comparison so each side gets full width and reads
-     top-to-bottom (WikiTree → score → Wikidata) instead of three squeezed
-     columns that force the names to wrap. */
-  .q-compare { grid-template-columns: 1fr; }
-  .q-wt {
-    text-align: left; border-right: none;
-    border-left: 3px solid var(--wikitree); padding: 10px 0 10px 12px;
-  }
-  .q-cand { border-left: 3px solid var(--wikidata); padding: 10px 0 10px 12px; }
-  .q-mid { justify-content: flex-start; padding: 10px 0 2px; }
-  .q-score::after {
-    content: " match"; color: var(--ink-soft); font-weight: 400; font-size: 12px;
-  }
-  .q-options { gap: 8px; }
-  .q-opt { flex: 1 1 auto; text-align: center; }
-}
-
-/* agent: Open Archives corroboration */
-.agent-opt { display: block; margin-top: 12px; font-size: 14px; color: var(--ink-soft); cursor: pointer; }
-.agent-opt input { margin-right: 7px; vertical-align: middle; }
-.src-openarchives { background: var(--records); }
-.src-wikidata { background: var(--wikidata); }
-.pc-records { font-family: var(--font-mono); font-size: 11px; color: var(--records); margin-top: 7px; border-top: 1px dotted var(--rule); padding-top: 6px; }
-.pc-records a { color: var(--records); }

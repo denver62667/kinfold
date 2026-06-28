@@ -1,7 +1,7 @@
 {
   "name": "kinfold",
-  "version": "0.1.0",
-  "description": "Cross-reference a person across WikiTree and Wikidata",
+  "version": "0.2.0",
+  "description": "Document-first genealogy search — find records and references about a person across free, no-login archives",
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
@@ -9,8 +9,7 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-session": "^1.18.0"
+    "express": "^4.19.2"
   },
   "engines": {
     "node": ">=18"
